@@ -3,7 +3,7 @@ from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
-from database import Base
+from .database import Base
 
 #Define the Admin model
 class Admin(Base):
