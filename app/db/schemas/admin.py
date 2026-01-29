@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 #ADMIN
@@ -8,7 +8,7 @@ class AdminBase(BaseModel):
     is_active: bool
 
 class AdminCreate(AdminBase):
-    password: str
+    password: str = Field(..., max_length=72, min_length=8, description="Password must be between 8 and 72 characters")
 
 class AdminOut(AdminBase):
     id: int

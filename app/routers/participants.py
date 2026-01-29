@@ -42,6 +42,18 @@ def create_participants_bulk(participants: List[ParticipantCreate], db: Session 
 
     return db_participants
 
+#INSERT FROM FILE
+@router.post("/upload", response_model=dict)
+def upload_participants_file(
+    file_path: str,
+    db: Session = Depends(get_db)
+):
+    from services.csv_loader import load_participants_from_file
+
+    result = load_participants_from_file(file_path, db)
+    return result
+
+
 
 #READ ALL
 @router.get("/", response_model=list[ParticipantOut])
