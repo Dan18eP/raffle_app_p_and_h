@@ -24,6 +24,7 @@ class Participant(Base):
     last_name = Column(String(100), nullable=False)
     document_id = Column(String(50), unique=True, nullable=False)
     tickets = Column(Integer, default=0)
+    email = Column(String(150), unique=True, nullable=True)
 
     raffle_results = relationship("RaffleResult", back_populates="participant")
 
