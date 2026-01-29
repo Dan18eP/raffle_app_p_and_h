@@ -6,6 +6,7 @@ class ParticipantBase(BaseModel):
     last_name: str
     document_id: str
     tickets: int = 0
+    email: Optional[str] = None
 
 
 class ParticipantCreate(ParticipantBase):
@@ -17,6 +18,7 @@ class ParticipantUpdate(BaseModel):
     last_name: Optional[str] = None
     document_id: Optional[str] = None
     tickets: Optional[int] = None
+    email: Optional[str] = None
 
 
 class ParticipantOut(ParticipantBase):

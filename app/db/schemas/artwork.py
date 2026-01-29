@@ -8,6 +8,10 @@ class ArtworkBase(BaseModel):
 class ArtworkCreate(ArtworkBase):
     pass
 
+class ArtworkUpdate(BaseModel):
+    name: str | None = None
+    artist: str | None = None
+    
 
 class ArtworkOut(ArtworkBase):
     id: int
