@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -10,6 +10,9 @@ from db.schemas.participant import (
     ParticipantUpdate,
 )
 
+import shutil
+import os
+import uuid
 
 router = APIRouter(
     prefix="/participants",
@@ -45,12 +48,34 @@ def create_participants_bulk(participants: List[ParticipantCreate], db: Session 
 #INSERT FROM FILE
 @router.post("/upload", response_model=dict)
 def upload_participants_file(
-    file_path: str,
+    file: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
     from services.csv_loader import load_participants_from_file
 
-    result = load_participants_from_file(file_path, db)
+    #Validations and saving file temporarily
+    if not file.filename.endswith((".csv", ".xls", ".xlsx")):
+        raise HTTPException(
+            status_code=400,
+            detail="Only CSV or Excel files are allowed"
+        )
+
+    #Saving file temporarily
+    temp_dir = "temp_uploads"
+    os.makedirs(temp_dir, exist_ok=True)
+
+    temp_filename = f"{uuid.uuid4()}_{file.filename}"
+    temp_path = os.path.join(temp_dir, temp_filename)
+
+    with open(temp_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    #Processing file
+    result = load_participants_from_file(temp_path, db)
+
+    #Cleaning up
+    os.remove(temp_path)
+
     return result
 
 
