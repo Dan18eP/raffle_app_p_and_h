@@ -1,0 +1,111 @@
+:root{
+  --primary: #004f9e; /* main blue (from logo) */
+  --accent: #ffd24a; /* warm accent */
+  --muted: rgba(255,255,255,0.85);
+}
+
+.sidebar{
+  width: 240px;
+  min-width: 200px;
+  height: 100vh;
+  padding: 1.25rem;
+  background: linear-gradient(180deg, var(--primary) 0%, #0066c0 100%);
+  color: #fff;
+  box-shadow: 6px 0 24px rgba(2,6,23,0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.brand{
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.brand-logo{
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 25px;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.25);
+  border: 2px solid rgba(255,255,255,0.08);
+}
+
+.brand-title{
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.25);
+}
+
+.sidebar-nav{
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.nav-link{
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--muted);
+  padding: 0.6rem 0.85rem;
+  border-radius: 10px;
+  text-decoration: none;
+  transition: all 180ms cubic-bezier(.2,.9,.2,1);
+  font-weight: 600;
+}
+
+.nav-link:hover{
+  background: linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+  transform: translateX(6px);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(2,6,23,0.2);
+}
+
+.nav-link .icon{
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+
+.nav-link .icon svg{
+  width: 20px;
+  height: 20px;
+  display: block;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  fill: none;
+}
+
+.nav-link.active{
+  background: linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+  color: #fff;
+  box-shadow: inset 4px 0 0 var(--accent);
+}
+
+.sidebar-footer{
+  margin-top: auto;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.66);
+}
+
+/* Responsive: hide on small screens by default (app should provide toggle) */
+@media (max-width: 768px){
+  .sidebar{
+    position: fixed;
+    left: 0;
+    top: 0;
+    transform: translateX(-100%);
+    transition: transform 180ms ease;
+    z-index: 50;
+  }
+  .sidebar.open{
+    transform: translateX(0);
+  }
+}

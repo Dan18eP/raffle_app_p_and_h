@@ -1,0 +1,8 @@
+.artworks-container{ padding: 1.25rem; }
+.artworks-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin-top: 1rem }
+.artwork-card{ background:#fff; border-radius:12px; padding:1rem; box-shadow: 0 8px 20px rgba(2,6,23,0.04); position:relative; transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease; }
+.artwork-card:hover{ transform: translateY(-6px); box-shadow: 0 18px 40px rgba(2,6,23,0.06); }
+.artwork-card.awarded{ opacity: 0.45; filter: grayscale(40%); }
+.artwork-title{ font-weight:700; font-size:1.05rem }
+.artwork-artist{ color: rgba(2,6,23,0.6); font-size: .95rem }
+.artwork-badge{ position:absolute; right:10px; top:10px; background: rgba(0,0,0,0.06); padding: .25rem .6rem; border-radius:8px; font-weight:700; color: rgba(2,6,23,0.8); }
