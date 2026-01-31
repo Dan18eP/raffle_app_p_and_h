@@ -1,0 +1,18 @@
+:root {
+  --blue-main: #1da1d8;
+  --yellow-main: #f5c400;
+  --dark-text: #1f2937;
+  --light-bg: #f9fafb;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: var(--light-bg);
+  color: var(--dark-text);
+}
+
