@@ -37,6 +37,15 @@ export default function Raffle() {
     }, 3000);
   };
    
+  // Function to refresh artworks count from server
+  const refreshArtworksCount = async () => {
+    try {
+      const res = await api.get("/raffle/available-count");
+      setArtworksCount(res.data.count);
+    } catch (err) {
+      console.warn("Failed to refresh artworks count:", err);
+    }
+  };
   
   ;
 
@@ -44,11 +53,11 @@ export default function Raffle() {
     // fetch counts
     const fetchCounts = async () => {
       try {
-        const [arts, parts] = await Promise.all([
-          api.get("/artworks"),
+        const [availableRes, parts] = await Promise.all([
+          api.get("/raffle/available-count"),
           api.get("/participants"),
         ]);
-        setArtworksCount(arts.data.length);
+        setArtworksCount(availableRes.data.count);
         setParticipantsCount(parts.data.length);
       } catch (err) {
         // ignore
@@ -153,6 +162,10 @@ export default function Raffle() {
     setWinner(null);
     setHistory([]);
     setServerError(null);
+
+
+    // refresh artworks count
+    refreshArtworksCount();
   };
 
   const previewNext = async () => {
@@ -166,6 +179,8 @@ export default function Raffle() {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       setPreview(res.data);
+      // Refresh artworks count
+      await refreshArtworksCount();
     } catch (err) {
       const message = err?.response?.data?.detail || "No artworks available";
       setPreview({ artwork: message });
@@ -260,8 +275,6 @@ export default function Raffle() {
             if (revealCalledRef.current) return null;
             revealCalledRef.current = true;
 
-            // Update atworkscount
-            setArtworksCount((ac) => Math.max(0, ac - 1));
 
             // call API to reveal winner
             (async () => {
@@ -298,6 +311,8 @@ export default function Raffle() {
 
                   // immediate applause 
                   playApplause();
+                  // Refresh artworks count from server
+                  await refreshArtworksCount();
                 }
               } catch (err) {
                 const message = err?.response?.data?.detail || "Error running raffle";
@@ -335,6 +350,10 @@ export default function Raffle() {
       setHistory(res.data.results || []);
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 2600);
+
+      // refresh artworks count
+      refreshArtworksCount();
+
     } catch (err) {
       // show error in preview
       const message = err?.response?.data?.detail || "Test failed";

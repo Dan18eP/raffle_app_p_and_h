@@ -118,6 +118,19 @@ def validate_artwork(
 
     return {"valid": exists is None}
 
+@router.get("/available-count")
+def available_artworks_count(db: Session = Depends(get_db)):
+    count = (
+    db.query(models.Artwork)
+    .filter(
+        ~models.Artwork.id.in_(
+            db.query(models.RaffleResult.artwork_id)
+        )
+    )
+    .count()
+)
+    return {"count": count}
+
 
 @router.post("/reset", status_code=204)
 def reset_raffle(

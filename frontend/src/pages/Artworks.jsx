@@ -30,6 +30,10 @@ export default function Artworks() {
 
   if (loading) return <div>Loading artworks...</div>;
 
+  //CRUD for artworks 
+
+
+
   return (
     <div className="artworks-container">
       <h2>Artworks</h2>
