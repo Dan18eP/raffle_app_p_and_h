@@ -1,8 +1,68 @@
 .artworks-container{ padding: 1.25rem; }
-.artworks-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin-top: 1rem }
-.artwork-card{ background:#fff; border-radius:12px; padding:1rem; box-shadow: 0 8px 20px rgba(2,6,23,0.04); position:relative; transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease; }
-.artwork-card:hover{ transform: translateY(-6px); box-shadow: 0 18px 40px rgba(2,6,23,0.06); }
+.artworks-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin-top: 1rem; position: relative; z-index: 1;  }
+.artwork-card{ background:#fff; border-radius:12px; padding:1rem; box-shadow: 0 8px 20px rgba(2,6,23,0.04); position:relative; transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease; z-index: 1;}
+.artwork-card:hover{ transform: translateY(-6px); box-shadow: 0 18px 40px rgba(2,6,23,0.06); z-index: 1000;}
 .artwork-card.awarded{ opacity: 0.45; filter: grayscale(40%); }
 .artwork-title{ font-weight:700; font-size:1.05rem }
 .artwork-artist{ color: rgba(2,6,23,0.6); font-size: .95rem }
 .artwork-badge{ position:absolute; right:10px; top:10px; background: rgba(0,0,0,0.06); padding: .25rem .6rem; border-radius:8px; font-weight:700; color: rgba(2,6,23,0.8); }
+
+.btn-add{ background: var(--primary); color:#fff; border:none; padding:.6rem 1.2rem; border-radius:8px; font-weight:600; cursor:pointer; }
+.btn-add:hover{ background: var(--primary-2); }
+
+.msg{ padding:.75rem 1rem; border-radius:8px; margin-bottom:1rem; font-size:.9rem; }
+.msg.error{ background:#fdd; color:#c00; }
+.msg.success{ background:#dfd; color:#0a0; }
+
+.img-overlay{ 
+  position: absolute; 
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,.92); 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  z-index: 2; 
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  min-width: 300px;
+  min-height: 300px;
+  max-width: 60vw;
+  max-height: 60vh;
+  pointer-events: none;
+}
+
+.img-overlay img{ 
+  max-width: 100%; 
+  max-height: 100%; 
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.actions{ position:absolute; bottom:.5rem; right:.5rem; display:flex; gap:.25rem; opacity:0; transition: opacity 200ms; z-index:1000; pointer-events: auto; }
+.artwork-card:hover .actions{ opacity:1; }
+.actions button{ 
+  background:#fff; 
+  border:1px solid #ddd; 
+  padding:.4rem; 
+  border-radius:6px; 
+  cursor:pointer; 
+  font-size:.9rem; 
+  pointer-events:auto;      
+}
+.actions button:hover{ background:#f5f5f5; }
+
+.modal{ position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:20; }
+.modal-box{ background:#fff; padding:1.5rem; border-radius:12px; width:90%; max-width:500px; }
+.modal-box h3{ margin:0 0 1rem 0; }
+.modal-box input{ width:100%; padding:.6rem; border:1px solid #ddd; border-radius:6px; margin-bottom:.75rem; font-family:inherit; }
+.modal-box input[type="file"]{ padding:.4rem; }
+.preview{ max-width:100%; max-height:150px; margin-top:.5rem; border-radius:6px; }
+.btn-primary{ background:var(--primary); color:#fff; border:none; padding:.6rem 1.2rem; border-radius:6px; font-weight:600; cursor:pointer; }
+
+.actions-down {
+  bottom: -2rem !important;
+  opacity: 50% !important;
+}

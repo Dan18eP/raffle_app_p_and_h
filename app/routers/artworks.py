@@ -1,10 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import os, shutil, uuid
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 
 from db.database import get_db
 from db import models
 from db.schemas.artwork import ArtworkCreate, ArtworkOut, ArtworkUpdate
-from typing import List
+from typing import List, Optional
+
+# 
+UPLOAD_DIR = "static/artworks"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 router = APIRouter(
     prefix="/artworks",
@@ -13,8 +18,21 @@ router = APIRouter(
 
 #CREATE
 @router.post("/", response_model=ArtworkOut, status_code=status.HTTP_201_CREATED)
-def create_artwork(artwork: ArtworkCreate, db: Session = Depends(get_db)):
-    db_artwork = models.Artwork(**artwork.model_dump())
+def create_artwork(name: str = Form(...), artist: str = Form(...), image: UploadFile = File(None), db: Session = Depends(get_db)):
+    
+    image_url = None
+    
+    if image:
+        file_ext = os.path.splitext(image.filename)[1]
+        filename = f"{uuid.uuid4()}{file_ext}"
+        filepath = os.path.join(UPLOAD_DIR, filename)
+        
+        with open(filepath, "wb") as buffer:
+            shutil.copyfileobj(image.file, buffer)
+        
+        image_url = f"/static/artworks/{filename}"
+        
+    db_artwork = models.Artwork(name=name, artist=artist, image_url=image_url)
     db.add(db_artwork)
     db.commit()
     db.refresh(db_artwork)
@@ -61,7 +79,9 @@ def get_artwork(artwork_id: int, db: Session = Depends(get_db)):
 @router.put("/{artwork_id}", response_model=ArtworkOut)
 def update_artwork(
     artwork_id: int,
-    artwork_data: ArtworkUpdate,
+    name: Optional[str] = Form(None),
+    artist: Optional[str] = Form(None),
+    image: UploadFile = File(None),
     db: Session = Depends(get_db)
 ):
     artwork = db.query(models.Artwork).filter(
@@ -71,8 +91,27 @@ def update_artwork(
     if not artwork:
         raise HTTPException(status_code=404, detail="Artwork not found")
 
-    for key, value in artwork_data.model_dump(exclude_unset=True).items():
-        setattr(artwork, key, value)
+    if name:
+        artwork.name = name
+    if artist:
+        artwork.artist = artist
+    
+    if image:
+        #Delete old image if exists
+        if artwork.image_url:
+            old_path = artwork.image_url.lstrip("/")
+            if os.path.exists(old_path):
+                os.remove(old_path)
+        
+        #Save new image
+        file_ext = os.path.splitext(image.filename)[1]
+        filename = f"{uuid.uuid4()}{file_ext}"
+        filepath = os.path.join(UPLOAD_DIR, filename)
+        
+        with open(filepath, "wb") as buffer:
+            shutil.copyfileobj(image.file, buffer)
+        
+        artwork.image_url = f"/static/artworks/{filename}"
 
     db.commit()
     db.refresh(artwork)
@@ -88,6 +127,12 @@ def delete_artwork(artwork_id: int, db: Session = Depends(get_db)):
 
     if not artwork:
         raise HTTPException(status_code=404, detail="Artwork not found")
+    
+    #Delete associated image file if exists
+    if artwork.image_url:
+        filepath = artwork.image_url.lstrip("/")
+        if os.path.exists(filepath):
+            os.remove(filepath)
 
     db.delete(artwork)
     db.commit()

@@ -35,6 +35,8 @@ class Artwork(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(150), nullable=False)
     artist = Column(String(150), nullable=False)
+    image_url = Column(String(500), nullable=True) 
+    
 
     raffle_results = relationship("RaffleResult", back_populates="artwork")
 
