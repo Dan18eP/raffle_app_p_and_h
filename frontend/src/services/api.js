@@ -2,8 +2,17 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://127.0.0.1:8000",
+  baseURL: import.meta.env.VITE_API_URL || "http://127.0.0.1:8000",
 });
+
+
+// Global Injection of JWT in each request header for authenticated endpoints, ensuring secure access to protected resources without manual token management in individual API calls. 
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
 
 // Global response interceptor: if server returns 401, clear session and redirect to login
 api.interceptors.response.use(

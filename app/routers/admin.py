@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from db.database import get_db
 from db import models
-from db.schemas.admin import AdminCreate, AdminOut
+from db.schemas.admin import AdminCreate, AdminOut, PasswordChange
 from .auth import get_current_admin, hash_password
 
 
@@ -58,6 +58,8 @@ def create_admin(
         hashed_password= hash_password(admin.password),
         is_active=admin.is_active
     )
+    
+    
 
     db.add(db_admin)
     db.commit()
@@ -65,6 +67,41 @@ def create_admin(
 
     return db_admin
 
+
+@router.patch("/me/password", status_code=200)
+def change_my_password(
+    data: PasswordChange,
+    db: Session = Depends(get_db),
+    current_admin: models.Admin = Depends(get_current_admin)
+):
+    from passlib.context import CryptContext
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+    if not pwd_context.verify(data.current_password, current_admin.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+
+    current_admin.hashed_password = hash_password(data.new_password)
+    db.commit()
+    return {"message": "Password updated successfully"}
+
+@router.delete("/{admin_id}", status_code=status.HTTP_204_NO_CONTENT)
+
+def delete_admin(
+    admin_id: int,
+    db: Session = Depends(get_db),
+    _: models.Admin = Depends(get_current_admin)
+):
+    admin = db.query(models.Admin).filter(models.Admin.id == admin_id).first()
+    
+    if not admin:
+        raise HTTPException(status_code=404, detail="Admin not found")
+
+    if admin.id == 1:
+        raise HTTPException(status_code=403, detail="Cannot delete the first admin")
+   
+
+    db.delete(admin)
+    db.commit()
 
 
 @router.get("/", response_model=list[AdminOut])

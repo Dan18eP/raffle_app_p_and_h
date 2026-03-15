@@ -25,3 +25,7 @@ temp_uploads/
 *.log
 *.tmp
 *.bak
+
+# Static files
+app/static/artworks/*
+!app/static/artworks/.gitkeep
