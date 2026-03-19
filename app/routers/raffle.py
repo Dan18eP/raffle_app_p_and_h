@@ -100,6 +100,45 @@ def get_awarded_artworks(
     ids = [a[0] for a in awarded]
     return {"awarded": ids}
 
+
+@router.get("/available-count")
+def available_artworks_count(db: Session = Depends(get_db)):
+    count = (
+    db.query(models.Artwork)
+    .filter(
+        ~models.Artwork.id.in_(
+            db.query(models.RaffleResult.artwork_id)
+        )
+    )
+    .count()
+)
+    return {"count": count}
+
+@router.get("/last-result")
+def get_last_result(
+    db: Session = Depends(get_db),
+    _: models.Admin = Depends(get_current_admin)
+):
+    last = (
+        db.query(models.RaffleResult)
+        .order_by(models.RaffleResult.id.desc())
+        .first()
+    )
+
+    if not last:
+        return {"result": None}
+
+    return {
+        "result": {
+            "participant": f"{last.participant.first_name} {last.participant.last_name}",
+            "artwork": last.artwork.name,
+            "artist": last.artwork.artist,
+            "won_at": last.won_at.strftime("%d/%m/%Y %H:%M"),
+        }
+    }
+
+    
+    
 @router.get(
     "/validate/{artwork_id}",
     status_code=status.HTTP_200_OK
@@ -117,20 +156,6 @@ def validate_artwork(
     )
 
     return {"valid": exists is None}
-
-@router.get("/available-count")
-def available_artworks_count(db: Session = Depends(get_db)):
-    count = (
-    db.query(models.Artwork)
-    .filter(
-        ~models.Artwork.id.in_(
-            db.query(models.RaffleResult.artwork_id)
-        )
-    )
-    .count()
-)
-    return {"count": count}
-
 
 @router.post("/reset", status_code=204)
 def reset_raffle(
