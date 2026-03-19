@@ -168,7 +168,7 @@
 
 .stat-card {
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-2) 100%);
-  padding: 1.75rem;
+  padding: 0.5rem;
   border-radius: 16px;
   color: white;
   box-shadow: 0 8px 24px rgba(0, 79, 158, 0.2);
@@ -589,4 +589,117 @@
   .file-input-wrapper {
     width: 100%;
   }
+}
+
+/* Toolbar */
+.participants-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.participants-toolbar .stat-card {
+  flex-shrink: 0;
+  min-width: 160px;
+}
+
+/* Buscador */
+.search-box {
+  flex: 1;
+  min-width: 260px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 0.875rem 1rem 0.875rem 2.75rem;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-box input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(0, 79, 158, 0.1);
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.85rem;
+  width: 18px;
+  height: 18px;
+  color: rgba(2, 6, 23, 0.4);
+  pointer-events: none;
+}
+
+.search-clear {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(2, 6, 23, 0.4);
+  font-size: 0.85rem;
+  padding: 0.2rem;
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+
+.search-clear:hover { color: #020617; }
+
+/* Paginación */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.25rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.pagination-pages {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.pagination-btn {
+  padding: 0.5rem 0.85rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #374151;
+  transition: all 0.15s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: rgba(0, 79, 158, 0.06);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.pagination-btn.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-ellipsis {
+  padding: 0.5rem 0.4rem;
+  color: rgba(2, 6, 23, 0.4);
 }

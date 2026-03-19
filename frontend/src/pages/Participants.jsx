@@ -5,6 +5,9 @@ import "../Participants.css";
 export default function Participants() {
   // State variables
   const [participants, setParticipants] = useState([]);
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 50;
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -116,6 +119,11 @@ export default function Participants() {
     setError(null);
   };
 
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setCurrentPage(1);
+  };
+
   // Upload file
   const handleFileUpload = async (e) => {
     e.preventDefault();
@@ -150,6 +158,24 @@ export default function Participants() {
     }
   };
 
+    // Filter participants based on search query
+  const filtered = participants.filter((p) => {
+    const q = search.toLowerCase();
+    return (
+      p.first_name.toLowerCase().includes(q) ||
+      p.last_name.toLowerCase().includes(q) ||
+      p.document_id.toLowerCase().includes(q) ||
+      (p.email || "").toLowerCase().includes(q)
+    );
+  });
+
+  // Paginate filtered results
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginated = filtered.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   // load participants on component mount
   useEffect(() => {
     fetchParticipants();
@@ -159,13 +185,13 @@ export default function Participants() {
     <div className="participants-page">
       <div className="participants-header">
         <div>
-          <h1>Participants Management</h1>
-          <p className="subtitle">Manage all participants for the raffle event</p>
+          <h1>Gestión de participantes</h1>
+          <p className="subtitle">Gestiona todos los participantes del sorteo</p>
         </div>
         
         <div className="header-actions">
           <button className="btn primary" onClick={handleCreate} disabled={loading}>
-            <span className="btn-icon">+</span> Add Participant
+            <span className="btn-icon">+</span> Añadir Participante
           </button>
         </div>
       </div>
@@ -190,8 +216,8 @@ export default function Participants() {
       {/* Upload Section */}
       <div className="upload-section">
         <div className="upload-header">
-          <h3>Bulk Upload</h3>
-          <p>Upload participants from CSV or Excel file</p>
+          <h3>Carga Masiva</h3>
+          <p>Sube participantes desde un archivo CSV o Excel</p>
         </div>
         <form onSubmit={handleFileUpload} className="upload-form">
           <div className="file-input-wrapper">
@@ -216,24 +242,41 @@ export default function Participants() {
         </form>
       </div>
 
-      {/* Stats */}
-      <div className="participants-stats">
+      {/* Stats + Search */}
+      <div className="participants-toolbar">
         <div className="stat-card">
           <div className="stat-value">{participants.length}</div>
-          <div className="stat-label">Total Participants</div>
+          <div className="stat-label">Total Participantes</div>
+        </div>
+
+        <div className="search-box">
+          <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+          </svg>
+          <input
+            type="text"
+            placeholder="Buscar por nombre, apellido, documento o email..."
+            value={search}
+            onChange={handleSearchChange}
+          />
+          {search && (
+            <button className="search-clear" onClick={() => { setSearch(""); setCurrentPage(1); }}>✕</button>
+          )}
         </div>
       </div>
+
 
       {/* Table */}
       <div className="participants-table-container">
         {loading && participants.length === 0 && (
           <div className="loading-state">
             <div className="spinner"></div>
-            <p>Loading participants...</p>
+            <p>Cargando participantes...</p>
           </div>
         )}
         
         {!loading && participants.length === 0 && (
+
           <div className="empty-state">
             <div className="empty-icon">📋</div>
             <h3>No participants yet</h3>
@@ -243,22 +286,32 @@ export default function Participants() {
             </button>
           </div>
         )}
+
+        {!loading && participants.length > 0 && filtered.length === 0 && (
+          <div className="empty-state">
+            <div className="empty-icon">🔍</div>
+            <h3>Sin resultados</h3>
+            <p>No se encontraron participantes con "{search}"</p>
+            <button className="btn ghost" onClick={() => { setSearch(""); setCurrentPage(1); }}>Limpiar búsqueda</button>
+          </div>
+        )}
         
-        {participants.length > 0 && (
-          <table className="participants-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>First Name</th>
-                <th>Last Name</th>
-                <th>Document ID</th>
-                <th>Tickets</th>
-                <th>Email</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
+        {participants.length > 0 && filtered.length > 0 && (
+          <>
+            <table className="participants-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>First Name</th>
+                  <th>Last Name</th>
+                  <th>Document ID</th>
+                  <th>Tickets</th>
+                  <th>Email</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
             <tbody>
-              {participants.map((p) => (
+              {paginated.map((p) => (
                 <tr key={p.id}>
                   <td className="id-cell">{p.id}</td>
                   <td className="name-cell">{p.first_name}</td>
@@ -294,6 +347,50 @@ export default function Participants() {
               ))}
             </tbody>
           </table>
+
+          {totalPages > 1 && (
+            <div className="pagination">
+              <button
+                className="pagination-btn"
+                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                ← Anterior
+              </button>
+
+              <div className="pagination-pages">
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                  .reduce((acc, p, idx, arr) => {
+                    if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((p, idx) =>
+                    p === "..." ? (
+                      <span key={`ellipsis-${idx}`} className="pagination-ellipsis">…</span>
+                    ) : (
+                      <button
+                        key={p}
+                        className={`pagination-btn${currentPage === p ? " active" : ""}`}
+                        onClick={() => setCurrentPage(p)}
+                      >
+                        {p}
+                      </button>
+                    )
+                  )}
+              </div>
+
+              <button
+                className="pagination-btn"
+                onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                Siguiente →
+              </button>
+            </div>
+          )}
+        </>
         )}
       </div>
 
