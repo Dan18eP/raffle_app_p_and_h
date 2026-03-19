@@ -2,6 +2,17 @@ import { useState, useEffect } from "react";
 import api from "../services/api";
 import "../Admin.css";
 
+
+const parseError = (err) => {
+  const detail = err.response?.data?.detail;
+  if (!detail) return "Error inesperado.";
+  if (Array.isArray(detail)) {
+    return detail.map((d) => `${d.loc?.at(-1)}: ${d.msg}`).join(" | ");
+  }
+  return detail;
+};
+
+
 export default function Admin() {
   const [admins, setAdmins] = useState([]);
   const [loadingAdmins, setLoadingAdmins] = useState(true);
@@ -57,7 +68,7 @@ export default function Admin() {
       setNewAdmin({ username: "", email: "", password: "", is_active: true });
       fetchAdmins();
     } catch (err) {
-      setCreateError(err.response?.data?.detail || "Error al crear admin.");
+      setCreateError(parseError(err));
     } finally {
       setCreateLoading(false);
     }
@@ -82,7 +93,7 @@ export default function Admin() {
       setPwdSuccess("Contraseña actualizada correctamente.");
       setPwdData({ current_password: "", new_password: "", confirm_password: "" });
     } catch (err) {
-      setPwdError(err.response?.data?.detail || "Error al cambiar contraseña.");
+      setPwdError(parseError(err));
     } finally {
       setPwdLoading(false);
     }
@@ -96,7 +107,7 @@ export default function Admin() {
       await api.delete(`/admins/${adminId}`);
       fetchAdmins();
     } catch (err) {
-      setDeleteError(err.response?.data?.detail || "Error al eliminar admin.");
+      setDeleteError(parseError(err));;
     }
   };
 
