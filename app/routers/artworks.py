@@ -61,6 +61,10 @@ def get_artworks(db: Session = Depends(get_db)):
 
     return get_all
 
+#COUNT ARTWORKS
+@router.get("/count")
+def get_artworks_count(db: Session = Depends(get_db)):
+    return {"count": db.query(models.Artwork).count()}
 
 #READ ONE
 @router.get("/{artwork_id}", response_model=ArtworkOut)
@@ -82,6 +86,7 @@ def update_artwork(
     name: Optional[str] = Form(None),
     artist: Optional[str] = Form(None),
     image: UploadFile = File(None),
+    remove_image: bool = Form(False),
     db: Session = Depends(get_db)
 ):
     artwork = db.query(models.Artwork).filter(
@@ -95,6 +100,12 @@ def update_artwork(
         artwork.name = name
     if artist:
         artwork.artist = artist
+        
+    if remove_image and not image:  # Only remove without new upload
+        if artwork.image_url:
+            old_path = artwork.image_url.lstrip("/")
+            if os.path.exists(old_path): os.remove(old_path)
+        artwork.image_url = None
     
     if image:
         #Delete old image if exists
