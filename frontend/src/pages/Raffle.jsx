@@ -367,7 +367,7 @@ export default function Raffle() {
     <div className="raffle-page">
       <main className="raffle-main">
         <div className="raffle-hero">
-          <h1 style={{ margin: 0 }}>Raffle — Draw Artworks</h1>
+          <h1 style={{ margin: 0, color: "#004f9e"}}>Raffle — Draw Artworks</h1>
           <p style={{ margin: 0, color: "rgba(2,6,23,0.65)" }}>Generate the next artwork to present, then reveal the winner. Use the test run to simulate the whole raffle.</p>
 
           <div className="stats">
