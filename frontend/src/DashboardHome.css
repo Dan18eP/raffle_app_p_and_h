@@ -1,0 +1,142 @@
+.dashboard-home {
+  padding: 2rem;
+  max-width: 960px;
+}
+
+.dashboard-home__title {
+  font-size: 1.8rem;
+  margin-bottom: 2rem;
+  color: #004f9e;
+}
+
+.dashboard-home__section {
+  margin-bottom: 2.5rem;
+}
+
+.dashboard-home__section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+}
+
+/* Stat cards */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+.stat-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1.2rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.stat-card__label {
+  font-size: 0.82rem;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.stat-card__value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #ffd24a;
+}
+
+.stat-card__skeleton {
+  display: inline-block;
+  width: 48px;
+  height: 28px;
+  background: #e5e7eb;
+  border-radius: 6px;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Último resultado */
+.last-result {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1.2rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-width: 420px;
+}
+
+.last-result--empty,
+.last-result--loading {
+  color: #9ca3af;
+  font-size: 0.95rem;
+  padding: 1rem 0;
+}
+
+.last-result__row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.95rem;
+}
+
+.last-result__key {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.last-result__val {
+  color: #111827;
+  font-weight: 600;
+  text-align: right;
+}
+
+/* Accesos rápidos */
+.quick-links {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.quick-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.2rem 1.6rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.quick-link:hover {
+  background: #f3f4f6;
+  border-color: #6366f1;
+  color: #6366f1;
+}
+
+.quick-link__icon {
+  font-size: 1.6rem;
+}
+
+/* Contenido principal del dashboard */
+.dashboard-content {
+  padding: 2rem;
+  width: 100%;
+  overflow-y: auto;
+}
