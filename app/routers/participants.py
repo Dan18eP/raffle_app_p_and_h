@@ -79,6 +79,10 @@ def upload_participants_file(
     return result
 
 
+#COUNT PARTICIPANTS
+@router.get("/count")
+def get_participants_count(db: Session = Depends(get_db)):
+    return {"count": db.query(models.Participant).count()}
 
 #READ ALL
 @router.get("/", response_model=list[ParticipantOut])
@@ -97,7 +101,6 @@ def get_participant(participant_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Participant not found")
 
     return participant
-
 
 #UPDATE
 @router.put("/{participant_id}", response_model=ParticipantOut)
