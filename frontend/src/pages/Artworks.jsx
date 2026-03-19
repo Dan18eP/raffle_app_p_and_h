@@ -2,13 +2,23 @@ import { useEffect, useState } from "react";
 import api from "../services/api";
 import "../Artworks.css";
 
+const BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+const parseError = (err) => {
+  const detail = err.response?.data?.detail;
+  if (!detail) return "Error inesperado.";
+  if (Array.isArray(detail)) return detail.map((d) => `${d.loc?.at(-1)}: ${d.msg}`).join(" | ");
+  return detail;
+};
+
 export default function Artworks() {
   const [artworks, setArtworks] = useState([]);
   const [awarded, setAwarded] = useState(new Set());
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [detailArtwork, setDetailArtwork] = useState(null);
+  const [formData, setFormData] = useState({ name: "", artist: "", image: null, remove_image: false });
   const [editingId, setEditingId] = useState(null);
-  const [formData, setFormData] = useState({ name: "", artist: "", image: null });
+  const [editingArtwork, setEditingArtwork] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -19,7 +29,7 @@ const fetchData = async () => {
       try {
         const [artsRes, awardedRes] = await Promise.all([
           api.get("/artworks"),
-          api.get("/raffle/awarded", { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }),
+          api.get("/raffle/awarded"),
         ]);
 
         setArtworks(artsRes.data || []);
@@ -35,14 +45,14 @@ const fetchData = async () => {
       fetchData();
 }, []);
 
-  if (loading) return <div>Loading artworks...</div>;
+
 
   //CRUD for artworks 
 
 const handleImageChange = (e) => {
   const file = e.target.files[0];
   if (file) {
-    setFormData({ ...formData, image: file });
+    setFormData({ ...formData, image: file, remove_image: false });
     setImagePreview(URL.createObjectURL(file));
   }
 };
@@ -50,149 +60,209 @@ const handleImageChange = (e) => {
 const handleSubmit = async (e) => {
   e.preventDefault();
   setLoading(true);
-  
-  const formDataToSend = new FormData();
-  formDataToSend.append("name", formData.name);
-  formDataToSend.append("artist", formData.artist);
-  if (formData.image) formDataToSend.append("image", formData.image);
+  setError(null);
+
+  const fd = new FormData();
+  fd.append("name", formData.name);
+  fd.append("artist", formData.artist);
+  if (formData.image) fd.append("image", formData.image);
+  if (editingId) fd.append("remove_image", formData.remove_image);
 
   try {
     if (editingId) {
-      await api.put(`/artworks/${editingId}`, formDataToSend, {
-        headers: { 
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "multipart/form-data"
-        }
-      });
-      setSuccess("Updated!");
+      await api.put(`/artworks/${editingId}`, fd);
+      setSuccess("Obra actualizada.");
     } else {
-      await api.post("/artworks", formDataToSend, {
-        headers: { 
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "multipart/form-data"
-        }
-      });
-      setSuccess("Created!");
+      await api.post("/artworks", fd);
+      setSuccess("Obra creada.");
     }
-    
     await fetchData();
-    setShowModal(false);
-    setFormData({ name: "", artist: "", image: null });
-    setImagePreview(null);
-    setTimeout(() => setSuccess(null), 2000);
+    closeEditModal();
+    setTimeout(() => setSuccess(null), 3000);
   } catch (err) {
-    setError(err?.response?.data?.detail || "Error");
+    setError(parseError(err));
   } finally {
     setLoading(false);
   }
 };
 
+
 const handleDelete = async (id) => {
-  if (awarded.has(id)) return alert("Can't delete awarded artwork");
-  if (!confirm("Delete this artwork?")) return;
-  
+  if (awarded.has(id)) {
+    setError("No puedes eliminar una obra ya sorteada.");
+    return;
+  }
+  if (!confirm("¿Eliminar esta obra?")) return;
   try {
-    await api.delete(`/artworks/${id}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-    });
+    await api.delete(`/artworks/${id}`);
+    setDetailArtwork(null);
     await fetchData();
-    setSuccess("Deleted!");
-    setTimeout(() => setSuccess(null), 2000);
+    setSuccess("Obra eliminada.");
+    setTimeout(() => setSuccess(null), 3000);
   } catch (err) {
-    setError("Error deleting");
+    setError(parseError(err));
   }
 };
 
-const openModal = (artwork = null) => {
+
+
+const openEditModal = (artwork = null) => {
   if (artwork) {
+    setEditingArtwork(artwork); 
     setEditingId(artwork.id);
-    setFormData({ name: artwork.name, artist: artwork.artist || "", image: null });
-    setImagePreview(artwork.image_url || null);
+    setFormData({ name: artwork.name, artist: artwork.artist || "", image: null, remove_image: false });
+    setImagePreview(artwork.image_url ? `${BASE_URL}${artwork.image_url}` : null);
   } else {
+    setEditingArtwork(null); 
     setEditingId(null);
-    setFormData({ name: "", artist: "", image: null });
+    setFormData({ name: "", artist: "", image: null, remove_image: false });
     setImagePreview(null);
   }
-  setShowModal(true);
+  
+  setShowEditModal(true);
+  setDetailArtwork(null);
 };
 
+const closeEditModal = () => {
+  setShowEditModal(false);
+  setEditingId(null);
+  setEditingArtwork(null); 
+  setFormData({ name: "", artist: "", image: null, remove_image: false });
+  setImagePreview(null);
+  setError(null);
+};
 
   if (loading && artworks.length === 0) return <div style={{padding:"2rem"}}>Loading...</div>;
 
+  console.log("editingArtwork:", editingArtwork, "editingId:", editingId);
+
 return (
   <div className="artworks-container">
-    <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1rem"}}>
-      <h2 style={{margin:0}}>Artworks</h2>
-      <button className="btn-add" onClick={() => openModal()}>+ Add</button>
+    <div className="artworks-header">
+      <h1>Obras de Arte</h1>
+      <button className="btn-add" onClick={() => openEditModal()}>+ Agregar</button>
     </div>
 
-    {error && <div className="msg error">{error}</div>}
-    {success && <div className="msg success">{success}</div>}
+    {error && <div className="msg msg--error">{error}</div>}
+    {success && <div className="msg msg--success">{success}</div>}
 
+    {/* ── GRID ── */}
     <div className="artworks-grid">
       {artworks.map((a) => {
         const isAwarded = awarded.has(a.id);
-        const showImage = hoveredCard === a.id && a.image_url;
-        
         return (
-          <article 
-            key={a.id} 
-            className={"artwork-card" + (isAwarded ? " awarded" : "")}
-            onMouseEnter={() => setHoveredCard(a.id)}
-            onMouseLeave={() => setHoveredCard(null)}
+          <article
+            key={a.id}
+            className={`artwork-card${isAwarded ? " awarded" : ""}`}
+            onClick={() => setDetailArtwork(a)}
           >
-            {showImage && (
-              <div className="img-overlay" style={{ pointerEvents: 'none' }}>
-                <img src={`http://127.0.0.1:8000${a.image_url}`} alt={a.name} />
+            {a.image_url ? (
+              <div className="artwork-thumb">
+                <img src={`${BASE_URL}${a.image_url}`} alt={a.name} />
               </div>
+            ) : (
+              <div className="artwork-thumb-placeholder" />
             )}
-            
+
             <div className="artwork-body">
               <div className="artwork-title">{a.name}</div>
               <div className="artwork-artist">{a.artist}</div>
             </div>
-            
-            {isAwarded && <div className="artwork-badge">Awarded</div>}
-            
-            {!isAwarded && (
-              <div className={showImage ? "actions actions-down" : "actions"}>
-                <button onClick={(e) => { e.stopPropagation(); openModal(a); }}>✏️</button>
-                <button onClick={(e) => { e.stopPropagation(); handleDelete(a.id); }}>🗑️</button>
-              </div>
-)}
+            {isAwarded && <div className="artwork-badge">Sorteada</div>}
           </article>
         );
       })}
     </div>
 
-    {showModal && (
-      <div className="modal" onClick={() => setShowModal(false)}>
+    {/* ── DETAIL MODAL ── */}
+    {detailArtwork && (
+      <div className="modal" onClick={() => setDetailArtwork(null)}>
+        <div className="modal-box modal-box--detail" onClick={(e) => e.stopPropagation()}>
+          <button className="modal-close" onClick={() => setDetailArtwork(null)}>✕</button>
+
+          {detailArtwork.image_url ? (
+            <img src={`${BASE_URL}${detailArtwork.image_url}`} className="detail-image" alt={detailArtwork.name} />
+          ) : (
+            <div className="detail-no-image">Sin imagen</div>
+          )}
+
+          <div className="detail-info">
+            <h2 className="detail-title">{detailArtwork.name}</h2>
+            <p className="detail-artist">{detailArtwork.artist}</p>
+            {awarded.has(detailArtwork.id) && (
+              <span className="artwork-badge artwork-badge--detail">Sorteada</span>
+            )}
+          </div>
+
+          {!awarded.has(detailArtwork.id) && (
+            <div className="detail-actions">
+              <button className="btn-edit" onClick={() => openEditModal(detailArtwork)}>✏️ Editar</button>
+              <button className="btn-delete" onClick={() => handleDelete(detailArtwork.id)}>🗑️ Eliminar</button>
+            </div>
+          )}
+        </div>
+      </div>
+    )}
+
+    {/* ── EDIT / CREATE MODE ── */}
+    {showEditModal && (
+      <div className="modal" onClick={closeEditModal}>
         <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-          <h3>{editingId ? "Edit" : "New"} Artwork</h3>
+          <button className="modal-close" onClick={closeEditModal}>✕</button>
+          <h3>{editingId ? "Editar obra" : "Nueva obra"}</h3>
           <form onSubmit={handleSubmit}>
-            <input
-              placeholder="Name *"
-              required
-              value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
-            />
-            <input
-              placeholder="Artist"
-              value={formData.artist}
-              onChange={(e) => setFormData({...formData, artist: e.target.value})}
-            />
-            <input type="file" accept="image/*" onChange={handleImageChange} />
-            {imagePreview && (
-              <img 
-                src={formData.image ? imagePreview : `http://127.0.0.1:8000${imagePreview}`} 
-                className="preview" 
-                alt="Preview" 
-            />
-        )}
-            
-            <div style={{display:"flex", gap:".5rem", marginTop:"1rem"}}>
-              <button type="button" onClick={() => setShowModal(false)}>Cancel</button>
-              <button type="submit" className="btn-primary">{editingId ? "Update" : "Create"}</button>
+            <div className="form-group">
+              <label>Nombre *</label>
+              <input
+                placeholder="Nombre de la obra"
+                required
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            </div>
+            <div className="form-group">
+              <label>Artista</label>
+              <input
+                placeholder="Nombre del artista"
+                value={formData.artist}
+                onChange={(e) => setFormData({ ...formData, artist: e.target.value })}
+              />
+            </div>
+            <div className="form-group">
+              <label>{editingId ? "Reemplazar imagen" : "Imagen"}</label>
+              <input type="file" accept="image/*" onChange={handleImageChange} />
+            </div>
+
+
+            {imagePreview && !formData.remove_image && (
+              <img src={imagePreview} className="preview" alt="Preview" />
+            )}
+
+            {/* Only when editing an existing image and no new image has been selected */}
+            {editingId && editingArtwork?.image_url && !formData.image && (
+              <div className="form-group form-group--checkbox">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={formData.remove_image}
+                    onChange={(e) => {
+                      setFormData({ ...formData, remove_image: e.target.checked });
+                      if (e.target.checked) setImagePreview(null);
+                      else setImagePreview(`${BASE_URL}${editingArtwork.image_url}`);
+                    }}
+                  />
+                  {" "}Eliminar imagen actual
+                </label>
+              </div>
+            )}
+
+            {error && <p className="msg msg--error">{error}</p>}
+
+            <div className="modal-actions">
+              <button type="button" className="btn-cancel" onClick={closeEditModal}>Cancelar</button>
+              <button type="submit" className="btn-primary" disabled={loading}>
+                {loading ? "Guardando..." : editingId ? "Actualizar" : "Crear"}
+              </button>
             </div>
           </form>
         </div>
