@@ -5,18 +5,61 @@
 }
 
 .sidebar{
-  width: 240px;
-  min-width: 200px;
-  height: 200vh;
-  padding: 1.25rem;
+  width: 220px;
+  min-height: 100%; 
+  position: sticky;       
+  top: 0;     
+  height: 100vh;
+  padding: 1rem 0;
   background: linear-gradient(180deg, var(--primary) 0%, #0066c0 100%);
+  border-right: 1px solid #e5e7eb;
   color: #fff;
   box-shadow: 6px 0 24px rgba(2,6,23,0.18);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  flex-shrink: 0;         
+  overflow-y: auto;   
 }
 
+.sidebar--collapsed {
+  width: 64px;
+}
+
+.sidebar-toggle {
+  align-self: flex-end;
+  margin-right: 0.75rem;
+  margin-bottom: 0.75rem;
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 0.25rem;
+  color: #6b7280;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.sidebar-toggle:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.sidebar--collapsed .brand {
+  justify-content: center;
+}
+
+.sidebar--collapsed .nav-link {
+  justify-content: center;
+  padding: 0.75rem 0;
+}
+
+.sidebar--collapsed .sidebar-footer {
+  text-align: center;
+}
 .brand{
   display: flex;
   align-items: center;
@@ -108,4 +151,54 @@
   .sidebar.open{
     transform: translateX(0);
   }
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 1rem 0.75rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #dc2626;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: background 0.15s;
+  font-family: inherit;
+}
+
+.logout-btn:hover {
+  background: #fef2f2;
+}
+
+.logout-btn .icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.logout-btn .icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.sidebar-version {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  padding-left: 0.75rem;
 }
