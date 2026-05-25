@@ -7,6 +7,7 @@ import Raffle from "./Raffle";
 import Participants from "./Participants";
 import Artworks from "./Artworks";
 import Admin from "./Admin";
+import History from "./History";
 
 export default function Dashboard() {
   return (
@@ -21,6 +22,7 @@ export default function Dashboard() {
             <Route path="participants" element={<Participants />} />
             <Route path="artworks" element={<Artworks />} />
             <Route path="admin" element={<Admin />} />
+            <Route path="history" element={<History />} />
           </Routes>
         </div>
       </div>

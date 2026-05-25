@@ -324,6 +324,7 @@ export default function Participants() {
                 <tr>
                   <th>ID</th>
                   <th>Nombre Completo</th>
+                  <th>Boletas</th>
                   <th>Fecha Registro</th>
                   <th>Acciones</th>
                 </tr>
@@ -333,6 +334,22 @@ export default function Participants() {
                 <tr key={p.id}>
                   <td className="id-cell">{p.id}</td>
                   <td className="name-cell">{p.full_name}</td>
+                  <td className="tickets-cell-table">
+                    <div className="table-tickets-container">
+                      {p.tickets && p.tickets.length > 0 ? (
+                        p.tickets.slice(0, 5).map(t => (
+                          <span key={t.id} className={`ticket-badge-small ${t.status}`}>
+                            {t.ticket_number}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="no-tickets">Sin boletas</span>
+                      )}
+                      {p.tickets && p.tickets.length > 5 && (
+                        <span className="more-tickets">+{p.tickets.length - 5}</span>
+                      )}
+                    </div>
+                  </td>
                   <td className="date-cell">{new Date(p.created_at).toLocaleDateString()}</td>
                   <td className="actions-cell">
                     <button 

@@ -94,6 +94,19 @@ export default function Sidebar() {
         </NavLink>
 
         <NavLink
+          to="/dashboard/history"
+          className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}
+        >
+          <span className="icon" aria-hidden>
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none">
+              <path d="M12 8v4l3 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6"/>
+            </svg>
+          </span>
+          {!collapsed && <span className="label">Historial</span>}
+        </NavLink>
+
+        <NavLink
           to="/dashboard/admin"
           className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}
         >
