@@ -27,16 +27,23 @@ def create_ticket(
     if not participant:
         raise HTTPException(status_code=404, detail="Participant not found")
 
+    # Validate and format ticket number
+    ticket_num = ticket.ticket_number.strip()
+    if not ticket_num.isdigit():
+        raise HTTPException(status_code=400, detail="El número de boleta debe contener solo números")
+    
+    formatted_num = ticket_num.zfill(4)
+
     existing = db.query(models.Ticket).filter(
-        models.Ticket.ticket_number == ticket.ticket_number
+        models.Ticket.ticket_number == formatted_num
     ).first()
 
     if existing:
-        raise HTTPException(status_code=400, detail="Ticket number already exists")
+        raise HTTPException(status_code=400, detail=f"El número de boleta '{formatted_num}' ya existe")
 
     db_ticket = models.Ticket(
         participant_id=ticket.participant_id,
-        ticket_number=ticket.ticket_number,
+        ticket_number=formatted_num,
         status=models.TicketStatus.ELIGIBLE,
     )
 
@@ -60,9 +67,16 @@ def create_tickets_bulk(
     if not participant:
         raise HTTPException(status_code=404, detail="Participant not found")
 
-    clean_numbers = [n.strip() for n in payload.ticket_numbers if n and n.strip()]
+    clean_numbers = []
+    for n in payload.ticket_numbers:
+        if n and n.strip():
+            num = n.strip()
+            if not num.isdigit():
+                raise HTTPException(status_code=400, detail=f"La boleta '{num}' no es válida. Solo se permiten números.")
+            clean_numbers.append(num.zfill(4))
+
     if not clean_numbers:
-        raise HTTPException(status_code=400, detail="No valid ticket numbers provided")
+        raise HTTPException(status_code=400, detail="No se proporcionaron números de boleta válidos")
 
     duplicated_in_request = len(clean_numbers) != len(set(clean_numbers))
     if duplicated_in_request:
@@ -103,6 +117,31 @@ def get_tickets(
     _: models.Admin = Depends(get_current_admin),
 ):
     return db.query(models.Ticket).order_by(models.Ticket.id.asc()).all()
+
+
+@router.patch("/{ticket_id}/toggle-status", response_model=TicketOut)
+def toggle_ticket_status(
+    ticket_id: int,
+    db: Session = Depends(get_db),
+    _: models.Admin = Depends(get_current_admin),
+):
+    ticket = db.query(models.Ticket).filter(models.Ticket.id == ticket_id).first()
+
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+
+    if ticket.status == models.TicketStatus.WINNER:
+        raise HTTPException(status_code=400, detail="Winner tickets cannot be disabled")
+
+    # Toggle between ELIGIBLE and EXCLUDED
+    if ticket.status == models.TicketStatus.ELIGIBLE:
+        ticket.status = models.TicketStatus.EXCLUDED
+    else:
+        ticket.status = models.TicketStatus.ELIGIBLE
+
+    db.commit()
+    db.refresh(ticket)
+    return ticket
 
 
 @router.delete("/{ticket_id}", status_code=status.HTTP_204_NO_CONTENT)

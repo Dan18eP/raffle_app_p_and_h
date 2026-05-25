@@ -46,10 +46,25 @@ def load_participants_from_file(file_path: str, db: Session) -> dict:
     for index, row in df.iterrows():
         try:
             name = str(row[actual_cols["full_name"]]).strip()
-            ticket_num = str(row[actual_cols["ticket_number"]]).strip()
+            raw_ticket = str(row[actual_cols["ticket_number"]]).strip()
 
-            if not name or name.lower() == "nan" or not ticket_num or ticket_num.lower() == "nan":
+            if not name or name.lower() == "nan" or not raw_ticket or raw_ticket.lower() == "nan":
                 continue
+
+            # Validate and format ticket
+            # Remove decimals if pandas read them from Excel (e.g. "1.0")
+            if "." in raw_ticket:
+                raw_ticket = raw_ticket.split(".")[0]
+                
+            if not raw_ticket.isdigit():
+                stats["errors"].append({
+                    "row": index + 2,
+                    "ticket_number": raw_ticket,
+                    "error": f"La boleta '{raw_ticket}' debe ser numérica"
+                })
+                continue
+            
+            ticket_num = raw_ticket.zfill(4)
 
             # 1. Get or create participant
             p_id = participant_cache.get(name)

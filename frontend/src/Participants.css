@@ -732,6 +732,14 @@
   border-color: rgba(255, 210, 74, 0.4);
 }
 
+.ticket-badge-small.excluded {
+  background: rgba(0, 0, 0, 0.05);
+  color: rgba(2, 6, 23, 0.4);
+  border-color: rgba(0, 0, 0, 0.1);
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
 .more-tickets {
   font-size: 0.75rem;
   font-weight: 600;
@@ -772,6 +780,14 @@
   border-color: var(--accent);
   background: var(--accent);
   color: #111;
+}
+
+.ticket-badge.excluded {
+  border-color: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.05);
+  color: rgba(2, 6, 23, 0.3);
+  text-decoration: line-through;
+  opacity: 0.6;
 }
 
 .field-hint {

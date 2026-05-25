@@ -147,6 +147,28 @@ export default function Participants() {
     setCurrentPage(1);
   };
 
+  const handleToggleTicket = async (ticketId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.patch(`/tickets/${ticketId}/toggle-status`);
+      // Update local state for current tickets in modal
+      setFormData(prev => ({
+        ...prev,
+        current_tickets: prev.current_tickets.map(t => 
+          t.id === ticketId ? res.data : t
+        )
+      }));
+      // Update main participants list
+      await fetchParticipants();
+    } catch (err) {
+      console.error("Error toggling ticket:", err);
+      setError(err?.response?.data?.detail || "Error al cambiar estado de boleta");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Upload file
   const handleFileUpload = async (e) => {
     e.preventDefault();
@@ -452,12 +474,20 @@ export default function Participants() {
               {/* Current Tickets (only in edit mode) */}
               {editingId && formData.current_tickets && formData.current_tickets.length > 0 && (
                 <div className="form-group">
-                  <label>Boletas actuales:</label>
+                  <label>Boletas actuales (clic para habilitar/deshabilitar):</label>
                   <div className="current-tickets-list">
                     {formData.current_tickets.map(t => (
-                      <span key={t.id} className={`ticket-badge ${t.status}`}>
+                      <button 
+                        key={t.id} 
+                        type="button"
+                        className={`ticket-badge ${t.status}`}
+                        onClick={() => t.status !== 'winner' && handleToggleTicket(t.id)}
+                        disabled={loading || t.status === 'winner'}
+                        title={t.status === 'winner' ? "Ganadora (bloqueada)" : (t.status === 'eligible' ? "Deshabilitar participación" : "Habilitar participación")}
+                        style={{ cursor: t.status === 'winner' ? 'not-allowed' : 'pointer', border: 'none' }}
+                      >
                         {t.ticket_number}
-                      </span>
+                      </button>
                     ))}
                   </div>
                 </div>
