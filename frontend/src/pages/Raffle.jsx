@@ -158,15 +158,23 @@ export default function Raffle() {
     }
   }, [history]);
 
-  const clearRaffleState = () => {
+  const clearRaffleState = async () => {
     if (!confirm("¿Estás seguro de que deseas limpiar el estado del sorteo? Esto borrará el ganador actual y el historial visible en esta sesión.")) return;
     
+    setLoading(true);
     try {
+      // 1. Resetear el servidor (base de datos)
+      await api.post("/raffle/reset", null, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+
+      // 2. Limpiar local storage
       localStorage.removeItem("raffle_preview");
       localStorage.removeItem("raffle_winner");
       localStorage.removeItem("raffle_history");
     } catch (err) {
-      // ignore
+      console.error("Error al resetear sorteo:", err);
+      setServerError("Error al intentar resetear el sorteo en el servidor");
     }
 
     // stop any audio and timer
@@ -190,9 +198,9 @@ export default function Raffle() {
     setHistory([]);
     setServerError(null);
 
-
     // refresh artworks count
-    refreshArtworksCount();
+    await refreshArtworksCount();
+    setLoading(false);
   };
 
   const previewNext = async () => {
@@ -257,14 +265,14 @@ export default function Raffle() {
 
 
     try {
-      // try to use audio duration if available (limit to 15s), otherwise default 15
-      const duration = audioRef.current?.duration;
-      const start = Number.isFinite(duration) && duration > 0 ? Math.min(15, Math.ceil(duration)) : 15;
+      // Contador fijado en 10s para mejor ritmo en vivo
+      const start = 10;
       setCountdown(start);
 
-      // play audio
+      // reproducir audio
       if (audioRef.current) {
         try {
+          audioRef.current.playbackRate = 1.25; // Acelerar un poco para aumentar tensión
           audioRef.current.currentTime = 0;
           await audioRef.current.play();
         } catch (err) {
