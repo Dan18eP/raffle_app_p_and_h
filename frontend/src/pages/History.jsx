@@ -72,7 +72,7 @@ export default function History() {
               {history.map((item) => (
                 <tr key={item.raffle_id}>
                   <td className="date-cell">
-                    {new Date(item.drawn_at).toLocaleString()}
+                    {new Date(item.drawn_at).toLocaleString('es-CO', { timeZone: 'America/Bogota' })}
                   </td>
                   <td className="name-cell" style={{ fontWeight: 700 }}>
                     {item.artwork_name}

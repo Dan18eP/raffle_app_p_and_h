@@ -169,6 +169,28 @@ export default function Participants() {
     }
   };
 
+  const handleDeleteTicket = async (ticketId) => {
+    if (!confirm("¿Estás seguro de eliminar esta boleta permanentemente?")) return;
+    
+    setLoading(true);
+    setError(null);
+    try {
+      await api.delete(`/tickets/${ticketId}`);
+      // Update local state for current tickets in modal
+      setFormData(prev => ({
+        ...prev,
+        current_tickets: prev.current_tickets.filter(t => t.id !== ticketId)
+      }));
+      // Update main participants list
+      await fetchParticipants();
+    } catch (err) {
+      console.error("Error deleting ticket:", err);
+      setError(err?.response?.data?.detail || "Error al eliminar boleta");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Upload file
   const handleFileUpload = async (e) => {
     e.preventDefault();
@@ -477,17 +499,29 @@ export default function Participants() {
                   <label>Boletas actuales (clic para habilitar/deshabilitar):</label>
                   <div className="current-tickets-list">
                     {formData.current_tickets.map(t => (
-                      <button 
-                        key={t.id} 
-                        type="button"
-                        className={`ticket-badge ${t.status}`}
-                        onClick={() => t.status !== 'winner' && handleToggleTicket(t.id)}
-                        disabled={loading || t.status === 'winner'}
-                        title={t.status === 'winner' ? "Ganadora (bloqueada)" : (t.status === 'eligible' ? "Deshabilitar participación" : "Habilitar participación")}
-                        style={{ cursor: t.status === 'winner' ? 'not-allowed' : 'pointer', border: 'none' }}
-                      >
-                        {t.ticket_number}
-                      </button>
+                      <div key={t.id} className={`ticket-badge-wrapper ${t.status}`}>
+                        <button 
+                          type="button"
+                          className={`ticket-badge ${t.status}`}
+                          onClick={() => t.status !== 'winner' && handleToggleTicket(t.id)}
+                          disabled={loading || t.status === 'winner'}
+                          title={t.status === 'winner' ? "Ganadora (bloqueada)" : (t.status === 'eligible' ? "Deshabilitar participación" : "Habilitar participación")}
+                          style={{ cursor: t.status === 'winner' ? 'not-allowed' : 'pointer', border: 'none' }}
+                        >
+                          {t.ticket_number}
+                        </button>
+                        {t.status !== 'winner' && (
+                          <button 
+                            type="button"
+                            className="ticket-delete-btn"
+                            onClick={() => handleDeleteTicket(t.id)}
+                            disabled={loading}
+                            title="Eliminar boleta"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </div>
