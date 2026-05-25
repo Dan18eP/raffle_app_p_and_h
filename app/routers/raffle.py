@@ -145,8 +145,12 @@ def reset_raffle(
     db: Session = Depends(get_db),
     _: models.Admin = Depends(get_current_admin)
 ):
-    # Elimina todos los sorteos y boletas (CASCADE en BD lo maneja)
+    # 1. Elimina todos los sorteos realizados
     db.execute(text("TRUNCATE TABLE raffles RESTART IDENTITY CASCADE"))
+    
+    # 2. Resetear el estado de TODAS las boletas a 'eligible'
+    db.query(models.Ticket).update({models.Ticket.status: models.TicketStatus.ELIGIBLE})
+    
     db.commit()
 
 
