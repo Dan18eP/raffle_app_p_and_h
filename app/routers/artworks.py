@@ -1,4 +1,4 @@
-import os, shutil, uuid
+import os, uuid
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 
@@ -6,10 +6,7 @@ from app.db.database import get_db
 from app.db import models
 from app.db.schemas.artwork import ArtworkCreate, ArtworkOut, ArtworkUpdate
 from typing import List, Optional
-
-# 
-UPLOAD_DIR = "static/artworks"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+from app.utils.storage import upload_file_to_supabase, delete_file_from_supabase
 
 router = APIRouter(
     prefix="/artworks",
@@ -18,19 +15,21 @@ router = APIRouter(
 
 #CREATE
 @router.post("/", response_model=ArtworkOut, status_code=status.HTTP_201_CREATED)
-def create_artwork(name: str = Form(...), artist: str = Form(...), image: UploadFile = File(None), db: Session = Depends(get_db)):
-    
+def create_artwork(
+    name: str = Form(...), 
+    artist: str = Form(...), 
+    image: UploadFile = File(None), 
+    db: Session = Depends(get_db)
+):
     image_url = None
     
     if image:
-        file_ext = os.path.splitext(image.filename)[1]
-        filename = f"{uuid.uuid4()}{file_ext}"
-        filepath = os.path.join(UPLOAD_DIR, filename)
-        
-        with open(filepath, "wb") as buffer:
-            shutil.copyfileobj(image.file, buffer)
-        
-        image_url = f"/static/artworks/{filename}"
+        try:
+            # Read file content as bytes for supabase
+            contents = image.file.read()
+            image_url = upload_file_to_supabase(contents, image.filename, image.content_type)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to upload image: {str(e)}")
         
     db_artwork = models.Artwork(name=name, artist=artist, image_url=image_url)
     db.add(db_artwork)
@@ -41,25 +40,18 @@ def create_artwork(name: str = Form(...), artist: str = Form(...), image: Upload
 #CREATE BULK
 @router.post("/bulk", response_model=list[ArtworkOut], status_code=status.HTTP_201_CREATED)
 def create_artworks_bulk(artworks: List[ArtworkCreate], db: Session = Depends(get_db)):
-
     db_artworks = [models.Artwork(**art.model_dump()) for art in artworks]
-
     db.add_all(db_artworks)
     db.commit()
-
     for art in db_artworks:
         db.refresh(art)
-
     return db_artworks
 
 
 #READ ALL
 @router.get("/", response_model=list[ArtworkOut])
 def get_artworks(db: Session = Depends(get_db)):
-    
-    get_all = db.query(models.Artwork).all()
-
-    return get_all
+    return db.query(models.Artwork).all()
 
 #COUNT ARTWORKS
 @router.get("/count")
@@ -101,28 +93,22 @@ def update_artwork(
     if artist:
         artwork.artist = artist
         
-    if remove_image and not image:  # Only remove without new upload
+    if remove_image and not image:
         if artwork.image_url:
-            old_path = artwork.image_url.lstrip("/")
-            if os.path.exists(old_path): os.remove(old_path)
+            delete_file_from_supabase(artwork.image_url)
         artwork.image_url = None
     
     if image:
-        #Delete old image if exists
+        # Delete old image if exists
         if artwork.image_url:
-            old_path = artwork.image_url.lstrip("/")
-            if os.path.exists(old_path):
-                os.remove(old_path)
+            delete_file_from_supabase(artwork.image_url)
         
-        #Save new image
-        file_ext = os.path.splitext(image.filename)[1]
-        filename = f"{uuid.uuid4()}{file_ext}"
-        filepath = os.path.join(UPLOAD_DIR, filename)
-        
-        with open(filepath, "wb") as buffer:
-            shutil.copyfileobj(image.file, buffer)
-        
-        artwork.image_url = f"/static/artworks/{filename}"
+        # Upload new image
+        try:
+            contents = image.file.read()
+            artwork.image_url = upload_file_to_supabase(contents, image.filename, image.content_type)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to upload new image: {str(e)}")
 
     db.commit()
     db.refresh(artwork)
@@ -139,11 +125,9 @@ def delete_artwork(artwork_id: int, db: Session = Depends(get_db)):
     if not artwork:
         raise HTTPException(status_code=404, detail="Artwork not found")
     
-    #Delete associated image file if exists
+    # Delete associated image file from Supabase if exists
     if artwork.image_url:
-        filepath = artwork.image_url.lstrip("/")
-        if os.path.exists(filepath):
-            os.remove(filepath)
+        delete_file_from_supabase(artwork.image_url)
 
     db.delete(artwork)
     db.commit()
