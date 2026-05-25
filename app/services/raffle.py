@@ -88,7 +88,7 @@ def run_raffle_single(db: Session, artwork_id: int = None) -> dict:
     db.refresh(raffle)
 
     return {
-        "artwork":        artwork.title,
+        "artwork":        artwork.name,
         "winner":         winner_ticket.participant.full_name,
         "participant_id": winner_ticket.participant_id,
         "ticket_number":  winner_ticket.ticket_number,

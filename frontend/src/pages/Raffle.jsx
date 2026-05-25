@@ -433,7 +433,12 @@ export default function Raffle() {
             <div className="winner-modal-overlay">
               <div className="winner-modal-content">
                 {winner.error ? (
-                  <div style={{ color: "#bf2b2b", fontWeight: 700, padding: "2rem" }}>{winner.error}</div>
+                  <div style={{ padding: "1rem" }}>
+                    <div style={{ color: "#bf2b2b", fontWeight: 700, marginBottom: "1.5rem" }}>{winner.error}</div>
+                    <button className="btn ghost" onClick={() => setWinner(null)} style={{ width: "100%" }}>
+                      Cerrar
+                    </button>
+                  </div>
                 ) : (
                   <>
                     <div className="winner-modal-label">¡Tenemos un ganador!</div>
