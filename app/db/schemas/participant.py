@@ -1,28 +1,27 @@
-from pydantic import BaseModel
+# app/db/schemas/participant.py
+from pydantic import BaseModel, EmailStr
 from typing import Optional
-
-class ParticipantBase(BaseModel):
-    first_name: str
-    last_name: str
-    document_id: str
-    tickets: int = 0
-    email: Optional[str] = None
+from datetime import datetime
 
 
-class ParticipantCreate(ParticipantBase):
-    pass
+class ParticipantCreate(BaseModel):
+    full_name: str
+    document_id: Optional[str] = None
+    email: Optional[EmailStr] = None
 
 
 class ParticipantUpdate(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    full_name: Optional[str] = None
     document_id: Optional[str] = None
-    tickets: Optional[int] = None
-    email: Optional[str] = None
+    email: Optional[EmailStr] = None
 
 
-class ParticipantOut(ParticipantBase):
+class ParticipantOut(BaseModel):
     id: int
+    full_name: str
+    document_id: Optional[str] = None
+    email: Optional[str] = None
+    created_at: datetime
 
     class Config:
-        from_attributes = True  
+        from_attributes = True

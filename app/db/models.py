@@ -1,53 +1,95 @@
-# Database models
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
-from sqlalchemy.orm import relationship
 from datetime import datetime
+import enum
 
-from .database import Base
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    DateTime,
+    ForeignKey,
+    Enum,
+    Boolean,
+)
+from sqlalchemy.orm import relationship
 
-#Define the Admin model
+from app.db.database import Base
+
+
+class TicketStatus(str, enum.Enum):
+    ELIGIBLE = "eligible"
+    EXCLUDED = "excluded"
+    WINNER = "winner"
+
+
+class RaffleStatus(str, enum.Enum):
+    PENDING = "pending"
+    COMPLETED = "completed"
+
+
 class Admin(Base):
     __tablename__ = "admins"
 
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(50), unique=True, index=True, nullable=False)
-    email = Column(String(100), unique=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
-    is_active = Column(Boolean, default=True)
+    username = Column(String(50), nullable=False, unique=True, index=True)
+    email = Column(String(100), nullable=False, unique=True, index=True)
+    hashed_password = Column(String(255), nullable=False)
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-#Define the Participant model
+
 class Participant(Base):
     __tablename__ = "participants"
 
     id = Column(Integer, primary_key=True, index=True)
-    first_name = Column(String(100), nullable=False)
-    last_name = Column(String(100), nullable=False)
-    document_id = Column(String(50), unique=True, nullable=False)
-    tickets = Column(Integer, default=0)
-    email = Column(String(150), unique=True, nullable=True)
+    full_name = Column(String(255), nullable=False, unique=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    raffle_results = relationship("RaffleResult", back_populates="participant")
+    tickets = relationship(
+        "Ticket",
+        back_populates="participant",
+        cascade="all, delete-orphan",
+    )
 
-#Define the Artwork model
+
+class Ticket(Base):
+    __tablename__ = "tickets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    participant_id = Column(Integer, ForeignKey("participants.id"), nullable=False, index=True)
+    ticket_number = Column(String(10), nullable=False, unique=True, index=True)
+    status = Column(
+        Enum(TicketStatus, name="ticket_status"),
+        nullable=False,
+        default=TicketStatus.ELIGIBLE,
+    )
+    assigned_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    participant = relationship("Participant", back_populates="tickets")
+
+
 class Artwork(Base):
     __tablename__ = "artworks"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(150), nullable=False)
-    artist = Column(String(150), nullable=False)
-    image_url = Column(String(500), nullable=True) 
-    
+    title = Column(String(255), nullable=False, unique=True)
+    image_url = Column(String(500), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    raffle_results = relationship("RaffleResult", back_populates="artwork")
+    raffles = relationship("Raffle", back_populates="artwork")
 
-#Define the RaffleResult model
-class RaffleResult(Base):
-    __tablename__ = "raffle_results"
+
+class Raffle(Base):
+    __tablename__ = "raffles"
 
     id = Column(Integer, primary_key=True, index=True)
-    participant_id = Column(Integer, ForeignKey("participants.id"))
-    artwork_id = Column(Integer, ForeignKey("artworks.id"))
-    won_at = Column(DateTime, default=datetime.utcnow)
+    artwork_id = Column(Integer, ForeignKey("artworks.id"), nullable=False, unique=True)
+    winner_ticket_id = Column(Integer, ForeignKey("tickets.id"), nullable=True, unique=True)
+    status = Column(
+        Enum(RaffleStatus, name="raffle_status"),
+        nullable=False,
+        default=RaffleStatus.PENDING,
+    )
+    drawn_at = Column(DateTime, nullable=True)
 
-    participant = relationship("Participant", back_populates="raffle_results")
-    artwork = relationship("Artwork", back_populates="raffle_results")
+    artwork = relationship("Artwork", back_populates="raffles")
+    winner_ticket = relationship("Ticket")

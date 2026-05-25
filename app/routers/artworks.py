@@ -2,9 +2,9 @@ import os, shutil, uuid
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 
-from db.database import get_db
-from db import models
-from db.schemas.artwork import ArtworkCreate, ArtworkOut, ArtworkUpdate
+from app.db.database import get_db
+from app.db import models
+from app.db.schemas.artwork import ArtworkCreate, ArtworkOut, ArtworkUpdate
 from typing import List, Optional
 
 # 

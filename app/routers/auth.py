@@ -8,8 +8,8 @@ from datetime import datetime, timedelta
 
 
 
-from db.database import get_db
-from db import models
+from app.db.database import get_db
+from app.db import models
 import os
 from dotenv import load_dotenv
 

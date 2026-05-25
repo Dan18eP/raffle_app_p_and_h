@@ -5,6 +5,23 @@ import victoryAudio from "../assets/mision_imposible.mp3";
 import applauseAudio from "../assets/aplausos.mp3";
 
 export default function Raffle() {
+  const [isProductionMode, setIsProductionMode] = useState(() => {
+    try {
+      const saved = localStorage.getItem("raffle_mode");
+      return saved ? JSON.parse(saved) : false;
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("raffle_mode", JSON.stringify(isProductionMode));
+    } catch (err) {
+      console.warn("Could not persist raffle mode:", err);
+    }
+  }, [isProductionMode]);
+
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState(null); // {id, artwork}
   const [winner, setWinner] = useState(null);
@@ -386,7 +403,9 @@ export default function Raffle() {
             <button className="btn primary" onClick={revealWinner} disabled={loading || !preview?.id || revealing}>{revealing ? "Revealing..." : "Reveal winner"}
   
             </button>
-            <button className="btn ghost" onClick={runTest} disabled={loading || revealing}>Test run</button>
+            {!isProductionMode && (
+              <button className="btn ghost" onClick={runTest} disabled={loading || revealing}>Test run</button>
+            )}
           </div>
 
           <div className="preview">
@@ -431,19 +450,35 @@ export default function Raffle() {
 
       <aside className="sidebar-panel">
         <h3 style={{ marginTop: 0 }}>Raffle Control</h3>
+        
+        <div style={{ marginBottom: "1.5rem", padding: "0.8rem", background: "rgba(255,255,255,0.5)", borderRadius: "10px", border: "1px solid rgba(0,79,158,0.1)" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: ".5rem", fontWeight: 600, cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              checked={isProductionMode}
+              onChange={(e) => setIsProductionMode(e.target.checked)}
+            />
+            {isProductionMode ? "Modo producción" : "Modo prueba"}
+          </label>
+        </div>
+
         <p style={{ color: "rgba(2,6,23,0.6)" }}>Use the controls to pick and reveal. The test run executes the raffle for all artworks.</p>
 
         <div style={{ marginTop: "1rem" }}>
           <button className="btn primary" onClick={() => { previewNext(); }} style={{ width: "100%" }} disabled={loading}>Generate artwork</button>
         </div>
 
-        <div style={{ marginTop: "1rem" }}>
-          <button className="btn secondary" onClick={() => { runTest(); }} style={{ width: "100%" }} disabled={loading}>Run test (all)</button>
-        </div>
+        {!isProductionMode && (
+          <>
+            <div style={{ marginTop: "1rem" }}>
+              <button className="btn secondary" onClick={() => { runTest(); }} style={{ width: "100%" }} disabled={loading}>Run test (all)</button>
+            </div>
 
-        <div style={{ marginTop: "1rem" }}>
-          <button className="btn ghost" onClick={clearRaffleState}>Clear</button>
-        </div>
+            <div style={{ marginTop: "1rem" }}>
+              <button className="btn ghost" onClick={clearRaffleState}>Clear</button>
+            </div>
+          </>
+        )}
       </aside>
 
       {showConfetti && (

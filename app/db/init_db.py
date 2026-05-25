@@ -1,5 +1,5 @@
-from database import engine
-from models import Base
+from app.db.database import engine, Base
+from app.db.models import * # importa los modelos para registrar tablas en Base.metadata
 
 print("Creating database tables...")
 

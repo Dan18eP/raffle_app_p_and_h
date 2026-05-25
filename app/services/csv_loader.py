@@ -2,7 +2,7 @@
 
 import pandas as pd
 from sqlalchemy.orm import Session
-from db import models
+from app.db import models
 
 
 EXPECTED_COLUMNS = {
