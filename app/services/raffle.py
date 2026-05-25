@@ -60,30 +60,25 @@ def run_raffle_single(db: Session, artwork_id: int = None) -> dict:
         if not artwork:
             return {"detail": "No artworks available for raffle"}
 
-    # 2. Obtener o crear Raffle para este artwork
+    # 2. Boletas elegibles globales; cada boleta representa una oportunidad
+    winner_ids = _get_winner_participant_ids(db)
+    eligible_tickets_query = _get_eligible_tickets(winner_ids, db)
+    
+    winner_ticket = eligible_tickets_query.order_by(func.random()).first()
+    
+    if not winner_ticket:
+        return {"detail": "No eligible participants or tickets available"}
+
+    # 3. Obtener o crear Raffle para este artwork
     raffle = db.query(Raffle).filter(
         Raffle.artwork_id == artwork.id,
-        Raffle.status == RaffleStatus.PENDING,
     ).first()
 
     if not raffle:
         raffle = Raffle(artwork_id=artwork.id, status=RaffleStatus.PENDING)
         db.add(raffle)
-        db.commit()
-        db.refresh(raffle)
 
-    # 3. Boletas elegibles globales; cada boleta representa una oportunidad
-    winner_ids = _get_winner_participant_ids(db)
-    eligible_tickets_query = _get_eligible_tickets(winner_ids, db)
-    
-    
-    winner_ticket = eligible_tickets_query.order_by(func.random()).first()
-    
-    if not winner_ticket:
-        return {"detail": "No eligible participants"}
-
-
-    # 5. Marcar boleta ganadora y cerrar sorteo
+    # 4. Marcar boleta ganadora y cerrar sorteo
     winner_ticket.status     = TicketStatus.WINNER
     raffle.winner_ticket_id  = winner_ticket.id
     raffle.status            = RaffleStatus.COMPLETED

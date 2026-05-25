@@ -119,5 +119,10 @@ def delete_ticket(
     if ticket.status == models.TicketStatus.WINNER:
         raise HTTPException(status_code=400, detail="Winner tickets cannot be deleted")
 
+    # Extra safety check: ensure the ticket is not referenced in any raffle
+    is_referenced = db.query(models.Raffle).filter(models.Raffle.winner_ticket_id == ticket_id).first()
+    if is_referenced:
+        raise HTTPException(status_code=400, detail="This ticket is linked to a raffle result and cannot be deleted")
+
     db.delete(ticket)
     db.commit()

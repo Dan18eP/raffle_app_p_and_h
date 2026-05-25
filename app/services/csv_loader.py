@@ -1,27 +1,13 @@
-# CSV loading service
-
+# app/services/csv_loader.py
 import pandas as pd
 from sqlalchemy.orm import Session
 from app.db import models
 
-
-EXPECTED_COLUMNS = {
-    "first_name",
-    "last_name",
-    "document_id",
-    "tickets",
-    "email",
-}
-
-
-def load_participants_from_file(
-    file_path: str,
-    db: Session
-) -> dict:
+def load_participants_from_file(file_path: str, db: Session) -> dict:
     """
-    Loads participants from CSV or Excel into the database.
+    Loads participants and their tickets from CSV or Excel into the database.
+    Supports merging participants by full_name and global ticket uniqueness.
     """
-
     if file_path.endswith(".csv"):
         df = pd.read_csv(file_path)
     elif file_path.endswith((".xls", ".xlsx")):
@@ -30,52 +16,79 @@ def load_participants_from_file(
         raise ValueError("Unsupported file format")
 
     df.columns = df.columns.str.strip().str.lower()
+    
+    # Mapping for flexible column names
+    col_map = {
+        "full_name": ["full_name", "nombre_completo", "nombre", "participante"],
+        "ticket_number": ["ticket_number", "ticket", "boleta", "numero_boleta", "nro_boleta"]
+    }
+    
+    actual_cols = {}
+    for standard, options in col_map.items():
+        for opt in options:
+            if opt in df.columns:
+                actual_cols[standard] = opt
+                break
+    
+    if "full_name" not in actual_cols or "ticket_number" not in actual_cols:
+        raise ValueError(f"Missing required columns. Expected something like 'full_name' and 'ticket_number'. Found: {list(df.columns)}")
 
-    missing = EXPECTED_COLUMNS - set(df.columns)
-    if missing:
-        raise ValueError(f"Missing columns: {missing}")
+    stats = {
+        "participants_created": 0,
+        "participants_reused": 0,
+        "tickets_created": 0,
+        "errors": []
+    }
 
-    created = 0
-    skipped = 0
-    errors = []
+    # Cache for the current session to avoid repeated DB queries for the same name in a single file
+    participant_cache = {} # full_name -> id
 
     for index, row in df.iterrows():
         try:
-            document_id = str(row["document_id"]).strip()
+            name = str(row[actual_cols["full_name"]]).strip()
+            ticket_num = str(row[actual_cols["ticket_number"]]).strip()
 
-            if not document_id:
-                skipped += 1
+            if not name or name.lower() == "nan" or not ticket_num or ticket_num.lower() == "nan":
                 continue
 
-            exists = db.query(models.Participant).filter(
-                models.Participant.document_id == document_id
-            ).first()
+            # 1. Get or create participant
+            p_id = participant_cache.get(name)
+            if not p_id:
+                db_p = db.query(models.Participant).filter(models.Participant.full_name == name).first()
+                if db_p:
+                    p_id = db_p.id
+                    stats["participants_reused"] += 1
+                else:
+                    new_p = models.Participant(full_name=name)
+                    db.add(new_p)
+                    db.flush() # Ensure we get an ID
+                    p_id = new_p.id
+                    stats["participants_created"] += 1
+                participant_cache[name] = p_id
 
-            if exists:
-                skipped += 1
+            # 2. Attempt to create ticket (Global uniqueness check)
+            exists_t = db.query(models.Ticket).filter(models.Ticket.ticket_number == ticket_num).first()
+            if exists_t:
+                stats["errors"].append({
+                    "row": index + 2,
+                    "ticket_number": ticket_num,
+                    "error": f"Ticket number '{ticket_num}' already exists globally"
+                })
                 continue
 
-            participant = models.Participant(
-                first_name=str(row["first_name"]).strip(),
-                last_name=str(row["last_name"]).strip(),
-                document_id=document_id,
-                tickets=int(row.get("tickets", 0)) if not pd.isna(row.get("tickets")) else 0,
-                email=str(row.get("email")).strip() if not pd.isna(row.get("email")) else None
+            new_t = models.Ticket(
+                participant_id=p_id,
+                ticket_number=ticket_num,
+                status=models.TicketStatus.ELIGIBLE
             )
-
-            db.add(participant)
-            created += 1
+            db.add(new_t)
+            stats["tickets_created"] += 1
 
         except Exception as e:
-            errors.append({
-                "row": index + 1,
+            stats["errors"].append({
+                "row": index + 2,
                 "error": str(e)
             })
 
     db.commit()
-
-    return {
-        "created": created,
-        "skipped": skipped,
-        "errors": errors
-    }
+    return stats

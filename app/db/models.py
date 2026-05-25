@@ -71,11 +71,13 @@ class Artwork(Base):
     __tablename__ = "artworks"
 
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String(255), nullable=False, unique=True)
+    name = Column(String(255), nullable=False, unique=True)
+    artist = Column(String(255), nullable=True)
     image_url = Column(String(500), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     raffles = relationship("Raffle", back_populates="artwork")
+
 
 
 class Raffle(Base):

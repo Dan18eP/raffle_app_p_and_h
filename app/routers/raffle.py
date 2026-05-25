@@ -148,3 +148,28 @@ def reset_raffle(
     # Elimina todos los sorteos y boletas (CASCADE en BD lo maneja)
     db.execute(text("TRUNCATE TABLE raffles RESTART IDENTITY CASCADE"))
     db.commit()
+
+
+@router.get("/history", status_code=status.HTTP_200_OK)
+def get_raffle_history(
+    db: Session = Depends(get_db),
+    _: models.Admin = Depends(get_current_admin)
+):
+    raffles = (
+        db.query(Raffle)
+        .filter(Raffle.status == RaffleStatus.COMPLETED)
+        .order_by(Raffle.drawn_at.desc())
+        .all()
+    )
+
+    history = []
+    for r in raffles:
+        history.append({
+            "raffle_id": r.id,
+            "drawn_at": r.drawn_at,
+            "artwork_name": r.artwork.name if r.artwork else "N/A",
+            "winner_full_name": r.winner_ticket.participant.full_name if r.winner_ticket and r.winner_ticket.participant else "N/A",
+            "ticket_number": r.winner_ticket.ticket_number if r.winner_ticket else "N/A",
+        })
+
+    return history

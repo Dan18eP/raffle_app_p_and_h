@@ -37,7 +37,7 @@ def create_participant(
         db.rollback()
         raise HTTPException(
             status_code=400,
-            detail="Participant with the same document_id or email already exists"
+            detail="Participant with the same full_name already exists"
         )
 
 
@@ -60,7 +60,7 @@ def create_participants_bulk(
         db.rollback()
         raise HTTPException(
             status_code=400,
-            detail="One or more participants have duplicate document_id or email"
+            detail="One or more participants have duplicate full_name"
         )
 
 
@@ -144,7 +144,7 @@ def update_participant(
         db.rollback()
         raise HTTPException(
             status_code=400,
-            detail="Another participant already uses that document_id or email"
+            detail="Another participant already uses that full_name"
         )
 
 
