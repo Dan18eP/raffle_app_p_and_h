@@ -63,12 +63,19 @@ export default function Raffle() {
       console.warn("Failed to refresh artworks count:", err);
     }
   };
-  
-  ;
+
+  const fetchHistory = async () => {
+    try {
+      const res = await api.get("/raffle/history");
+      setHistory(res.data);
+    } catch (err) {
+      console.warn("Failed to fetch history:", err);
+    }
+  };
 
   useEffect(() => {
     // fetch counts
-    const fetchCounts = async () => {
+    const fetchData = async () => {
       try {
         const [availableRes, parts] = await Promise.all([
           api.get("/raffle/available-count"),
@@ -76,11 +83,12 @@ export default function Raffle() {
         ]);
         setArtworksCount(availableRes.data.count);
         setParticipantsCount(parts.data.length);
+        await fetchHistory();
       } catch (err) {
         // ignore
       }
     };
-    fetchCounts();
+    fetchData();
   }, []);
 
   // Rehydrate raffle UI state from localStorage so preview/winner/history survive reloads
@@ -196,13 +204,12 @@ export default function Raffle() {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       setPreview(res.data);
-      // Refresh artworks count
+      // Actualizar contador de obras
       await refreshArtworksCount();
     } catch (err) {
-      const message = err?.response?.data?.detail || "No artworks available";
-      setPreview({ artwork: message });
+      const message = err?.response?.data?.detail || "No hay obras disponibles";
       setServerError(message);
-      console.error("Preview error:", err);
+      console.error("Error en previsualización:", err);
     } finally {
       setLoading(false);
     }
@@ -219,31 +226,29 @@ export default function Raffle() {
 
   const revealWinner = async () => {
 
-    // prevent double calls
+    // evitar llamadas dobles
     if (revealing) return;
 
-    // require a preview with an id so we reveal the exact artwork shown
     revealCalledRef.current = false;
 
     if (!preview?.id) {
-      setServerError("Please preview an artwork before revealing the winner.");
+      setServerError("Por favor, previsualice una obra antes de revelar al ganador.");
       return;
-
     }
 
-    // validate that the artwork is still valid (not already assigned)
+    // validar que la obra siga disponible
     try {
       const isValid = await validateArtwork(preview.id);
       if (!isValid) {
-        setServerError("This artwork has already been assigned.");
+        setServerError("Esta obra ya ha sido asignada.");
         return;
       }
     } catch {
-      setServerError("Unable to validate artwork.");
+      setServerError("No se pudo validar la obra.");
       return;
     }
 
-    // Start reveal sequence: play audio + countdown, then call API
+    // Iniciar secuencia: audio + cuenta regresiva, luego llamar a la API
     setServerError(null);
     setWinner(null);
     setRevealing(true);
@@ -372,9 +377,8 @@ export default function Raffle() {
       refreshArtworksCount();
 
     } catch (err) {
-      // show error in preview
-      const message = err?.response?.data?.detail || "Test failed";
-      setPreview({ artwork: message });
+      const message = err?.response?.data?.detail || "Error en simulacro";
+      setServerError(message);
     } finally {
       setLoading(false);
     }
@@ -384,37 +388,37 @@ export default function Raffle() {
     <div className="raffle-page">
       <main className="raffle-main">
         <div className="raffle-hero">
-          <h1 style={{ margin: 0, color: "#004f9e"}}>Raffle — Draw Artworks</h1>
-          <p style={{ margin: 0, color: "rgba(2,6,23,0.65)" }}>Generate the next artwork to present, then reveal the winner. Use the test run to simulate the whole raffle.</p>
+          <h1 style={{ margin: 0, color: "#004f9e"}}>Sorteo — Adjudicación de Obras</h1>
+          <p style={{ margin: 0, color: "rgba(2,6,23,0.65)" }}>Genera la siguiente obra a presentar, luego revela al ganador. Usa el modo prueba para simular todo el sorteo.</p>
 
           <div className="stats">
             <div className="stat">
               <strong>{artworksCount}</strong>
-              <div style={{ color: "rgba(2,6,23,0.6)" }}>Artworks</div>
+              <div style={{ color: "rgba(2,6,23,0.6)" }}>Obras</div>
             </div>
             <div className="stat">
               <strong>{participantsCount}</strong>
-              <div style={{ color: "rgba(2,6,23,0.6)" }}>Participants</div>
+              <div style={{ color: "rgba(2,6,23,0.6)" }}>Participantes</div>
             </div>
           </div>
 
           <div className="controls">
-            <button className="btn secondary" onClick={previewNext} disabled={loading || revealing}>Preview next artwork</button>
-            <button className="btn primary" onClick={revealWinner} disabled={loading || !preview?.id || revealing}>{revealing ? "Revealing..." : "Reveal winner"}
+            <button className="btn secondary" onClick={previewNext} disabled={loading || revealing}>Previsualizar siguiente obra</button>
+            <button className="btn primary" onClick={revealWinner} disabled={loading || !preview?.id || revealing}>{revealing ? "Revelando..." : "Revelar ganador"}
   
             </button>
             {!isProductionMode && (
-              <button className="btn ghost" onClick={runTest} disabled={loading || revealing}>Test run</button>
+              <button className="btn ghost" onClick={runTest} disabled={loading || revealing}>Simulacro</button>
             )}
           </div>
 
           <div className="preview">
-            <h3>Preview</h3>
-            <p>{preview ? preview.artwork : "Press \"Preview next artwork\" to start"}</p>
+            <h3>Previsualización</h3>
+            <p>{preview ? preview.artwork : "Presiona \"Previsualizar siguiente obra\" para comenzar"}</p>
 
             {revealing && countdown !== null && (
               <div className="reveal-countdown" style={{ marginTop: ".6rem", fontSize: "1.25rem", fontWeight: 800 }}>
-                🔊 Reveal in: <span style={{ marginLeft: ".4rem" }}>{countdown}s</span>
+                🔊 Revelación en: <span style={{ marginLeft: ".4rem" }}>{countdown}s</span>
               </div>
             )}
 
@@ -428,7 +432,8 @@ export default function Raffle() {
               ) : (
                 <>
                   <div style={{ fontWeight: 800 }}>{winner.artwork}</div>
-                  <div style={{ marginTop: ".5rem" }}>Winner: <strong>{winner.winner}</strong></div>
+                  <div style={{ marginTop: ".5rem" }}>Ganador: <strong>{winner.winner}</strong></div>
+                  <div style={{ fontSize: "0.9rem", color: "rgba(2,6,23,0.6)" }}>Boleta: {winner.ticket_number}</div>
                 </>
               )}
             </div>
@@ -436,11 +441,13 @@ export default function Raffle() {
 
           {history && history.length > 0 && (
             <div style={{ marginTop: "1rem" }}>
-              <h3 style={{ marginBottom: ".5rem" }}>History</h3>
-              {history.slice(0,6).map((h, i) => (
-                <div key={i} style={{ padding: ".4rem 0", borderBottom: "1px solid rgba(2,6,23,0.04)" }}>
-                  <div style={{fontWeight:700}}>{h.artwork}</div>
-                  <div style={{ color: "rgba(2,6,23,0.6)" }}>{h.winner}</div>
+              <h3 style={{ marginBottom: ".5rem" }}>Historial de Sorteos</h3>
+              {history.slice(0, 10).map((h, i) => (
+                <div key={i} style={{ padding: ".6rem 0", borderBottom: "1px solid rgba(2,6,23,0.04)" }}>
+                  <div style={{fontWeight:700}}>{h.artwork_name}</div>
+                  <div style={{ color: "rgba(2,6,23,0.6)", fontSize: "0.9rem" }}>
+                    Ganador: <strong>{h.winner_full_name}</strong> (Boleta: {h.ticket_number})
+                  </div>
                 </div>
               ))}
             </div>
@@ -449,7 +456,7 @@ export default function Raffle() {
       </main>
 
       <aside className="sidebar-panel">
-        <h3 style={{ marginTop: 0 }}>Raffle Control</h3>
+        <h3 style={{ marginTop: 0 }}>Control del Sorteo</h3>
         
         <div style={{ marginBottom: "1.5rem", padding: "0.8rem", background: "rgba(255,255,255,0.5)", borderRadius: "10px", border: "1px solid rgba(0,79,158,0.1)" }}>
           <label style={{ display: "flex", alignItems: "center", gap: ".5rem", fontWeight: 600, cursor: "pointer" }}>
@@ -462,20 +469,20 @@ export default function Raffle() {
           </label>
         </div>
 
-        <p style={{ color: "rgba(2,6,23,0.6)" }}>Use the controls to pick and reveal. The test run executes the raffle for all artworks.</p>
+        <p style={{ color: "rgba(2,6,23,0.6)" }}>Usa los controles para elegir y revelar. El simulacro ejecuta el sorteo para todas las obras.</p>
 
         <div style={{ marginTop: "1rem" }}>
-          <button className="btn primary" onClick={() => { previewNext(); }} style={{ width: "100%" }} disabled={loading}>Generate artwork</button>
+          <button className="btn primary" onClick={() => { previewNext(); }} style={{ width: "100%" }} disabled={loading}>Generar obra</button>
         </div>
 
         {!isProductionMode && (
           <>
             <div style={{ marginTop: "1rem" }}>
-              <button className="btn secondary" onClick={() => { runTest(); }} style={{ width: "100%" }} disabled={loading}>Run test (all)</button>
+              <button className="btn secondary" onClick={() => { runTest(); }} style={{ width: "100%" }} disabled={loading}>Ejecutar simulacro (todo)</button>
             </div>
 
             <div style={{ marginTop: "1rem" }}>
-              <button className="btn ghost" onClick={clearRaffleState}>Clear</button>
+              <button className="btn ghost" onClick={clearRaffleState}>Limpiar / Reset</button>
             </div>
           </>
         )}
@@ -505,7 +512,7 @@ export default function Raffle() {
         <div className="reveal-modal" role="dialog" aria-live="polite">
           <div className="reveal-popup">
             <div className="reveal-countdown-large">{countdown}</div>
-            <div className="reveal-caption">Revealing winner…</div>
+            <div className="reveal-caption">Revelando ganador…</div>
           </div>
         </div>
       )}

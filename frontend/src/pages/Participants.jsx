@@ -12,11 +12,8 @@ export default function Participants() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
-    first_name: "",
-    last_name: "",
-    document_id: "",
-    tickets: 0,
-    email: ""
+    full_name: "",
+    ticket_numbers: "" // New field for comma-separated tickets
   });
   const [uploadFile, setUploadFile] = useState(null);
   const [error, setError] = useState(null);
@@ -28,6 +25,8 @@ export default function Participants() {
     setError(null);
     try {
       const res = await api.get("/participants");
+      // Backend now returns participants with a 'tickets' relationship or count
+      // For the list, we just need the participants
       setParticipants(res.data);
     } catch (err) {
       console.error("Error loading participants:", err);
@@ -44,15 +43,42 @@ export default function Participants() {
     setError(null);
     
     try {
+      let participantId = editingId;
       if (editingId) {
-        // Update
-        await api.put(`/participants/${editingId}`, formData);
-        setSuccess("Participant updated successfully");
+        // Update name
+        await api.put(`/participants/${editingId}`, { full_name: formData.full_name });
       } else {
-        // Create
-        await api.post("/participants", formData);
-        setSuccess("Participant created successfully");
+        // Create new participant
+        const res = await api.post("/participants", { full_name: formData.full_name });
+        participantId = res.data.id;
       }
+
+      // Handle new tickets if any
+      const newTicketNumbers = formData.ticket_numbers
+        .split(",")
+        .map(n => n.trim())
+        .filter(n => n !== "");
+
+      if (newTicketNumbers.length > 0) {
+        try {
+          await api.post("/tickets/bulk", {
+            participant_id: participantId,
+            ticket_numbers: newTicketNumbers
+          });
+        } catch (tErr) {
+          console.error("Error saving tickets:", tErr);
+          // Extract specific error details if available
+          const detail = tErr?.response?.data?.detail;
+          // If it's a list of existing tickets, it will be in the detail string
+          setError(`Participante guardado, pero error en boletas: ${detail || "Error desconocido"}`);
+          // Re-fetch participants but DO NOT close the modal so user can fix the tickets
+          await fetchParticipants();
+          setLoading(false);
+          return;
+        }
+      }
+      
+      setSuccess(editingId ? "Participante actualizado" : "Participante y boletas creados con éxito");
       
       // Refresh list
       await fetchParticipants();
@@ -62,7 +88,7 @@ export default function Participants() {
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       console.error("Error saving participant:", err);
-      setError(err?.response?.data?.detail || "Error saving participant");
+      setError(err?.response?.data?.detail || "Error al guardar participante");
     } finally {
       setLoading(false);
     }
@@ -76,14 +102,14 @@ export default function Participants() {
     setError(null);
     try {
       await api.delete(`/participants/${id}`);
-      setSuccess("Participant deleted successfully");
+      setSuccess("Participante eliminado");
       await fetchParticipants();
       
       // Clear success message after 3s
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       console.error("Error deleting participant:", err);
-      setError("Error deleting participant");
+      setError("Error al eliminar participante");
     } finally {
       setLoading(false);
     }
@@ -92,7 +118,7 @@ export default function Participants() {
   // Open modal for creating new participant
   const handleCreate = () => {
     setEditingId(null);
-    setFormData({ first_name: "", last_name: "", document_id: "", tickets: 0, email: "" });
+    setFormData({ full_name: "", ticket_numbers: "", current_tickets: [] });
     setShowModal(true);
     setError(null);
   };
@@ -101,11 +127,9 @@ export default function Participants() {
   const handleEdit = (participant) => {
     setEditingId(participant.id);
     setFormData({
-      first_name: participant.first_name,
-      last_name: participant.last_name,
-      document_id: participant.document_id,
-      tickets: participant.tickets || 0,
-      email: participant.email || ""
+      full_name: participant.full_name,
+      ticket_numbers: "", // Always start empty for new tickets
+      current_tickets: participant.tickets || [] // Store existing tickets for display
     });
     setShowModal(true);
     setError(null);
@@ -115,7 +139,7 @@ export default function Participants() {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingId(null);
-    setFormData({ first_name: "", last_name: "", document_id: "", tickets: 0, email: "" });
+    setFormData({ full_name: "", ticket_numbers: "" });
     setError(null);
   };
 
@@ -139,7 +163,8 @@ export default function Participants() {
         headers: { "Content-Type": "multipart/form-data" }
       });
       
-      setSuccess(`Successfully uploaded: ${res.data.created || 0} participants`);
+      const summary = `Successfully processed: ${res.data.participants_created || 0} new, ${res.data.participants_reused || 0} merged. ${res.data.tickets_created || 0} tickets added.`;
+      setSuccess(summary);
       setUploadFile(null);
       
       // Reset file input
@@ -148,8 +173,8 @@ export default function Participants() {
       
       await fetchParticipants();
       
-      // Clean success message after 3s
-      setTimeout(() => setSuccess(null), 3000);
+      // Clean success message after 5s
+      setTimeout(() => setSuccess(null), 5000);
     } catch (err) {
       console.error("Error uploading file:", err);
       setError(err?.response?.data?.detail || "Error uploading file");
@@ -162,10 +187,7 @@ export default function Participants() {
   const filtered = participants.filter((p) => {
     const q = search.toLowerCase();
     return (
-      p.first_name.toLowerCase().includes(q) ||
-      p.last_name.toLowerCase().includes(q) ||
-      p.document_id.toLowerCase().includes(q) ||
-      (p.email || "").toLowerCase().includes(q)
+      p.full_name.toLowerCase().includes(q)
     );
   });
 
@@ -217,7 +239,7 @@ export default function Participants() {
       <div className="upload-section">
         <div className="upload-header">
           <h3>Carga Masiva</h3>
-          <p>Sube participantes desde un archivo CSV o Excel</p>
+          <p>Sube participantes desde un archivo CSV o Excel. El sistema fusionará nombres repetidos y agregará sus boletas.</p>
         </div>
         <form onSubmit={handleFileUpload} className="upload-form">
           <div className="file-input-wrapper">
@@ -255,7 +277,7 @@ export default function Participants() {
           </svg>
           <input
             type="text"
-            placeholder="Buscar por nombre, apellido, documento o email..."
+            placeholder="Buscar por nombre..."
             value={search}
             onChange={handleSearchChange}
           />
@@ -302,23 +324,17 @@ export default function Participants() {
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>First Name</th>
-                  <th>Last Name</th>
-                  <th>Document ID</th>
-                  <th>Tickets</th>
-                  <th>Email</th>
-                  <th>Actions</th>
+                  <th>Nombre Completo</th>
+                  <th>Fecha Registro</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
             <tbody>
               {paginated.map((p) => (
                 <tr key={p.id}>
                   <td className="id-cell">{p.id}</td>
-                  <td className="name-cell">{p.first_name}</td>
-                  <td className="name-cell">{p.last_name}</td>
-                  <td className="document-cell">{p.document_id}</td>
-                  <td className="tickets-cell">{p.tickets}</td>
-                  <td className="email-cell">{p.email || <span className="empty-value">—</span>}</td>
+                  <td className="name-cell">{p.full_name}</td>
+                  <td className="date-cell">{new Date(p.created_at).toLocaleDateString()}</td>
                   <td className="actions-cell">
                     <button 
                       className="btn-icon edit"
@@ -399,74 +415,59 @@ export default function Participants() {
         <div className="modal-overlay" onClick={handleCloseModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>{editingId ? "Edit Participant" : "New Participant"}</h2>
+              <h2>{editingId ? "Editar Participante" : "Nuevo Participante"}</h2>
               <button className="modal-close" onClick={handleCloseModal}>×</button>
             </div>
             
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label htmlFor="first_name">First Name *</label>
+                <label htmlFor="full_name">Nombre Completo *</label>
                 <input
-                  id="first_name"
+                  id="full_name"
                   type="text"
                   required
-                  placeholder="Enter first name"
-                  value={formData.first_name}
-                  onChange={(e) => setFormData({...formData, first_name: e.target.value})}
+                  placeholder="Ingrese nombre y apellido"
+                  value={formData.full_name}
+                  onChange={(e) => setFormData({...formData, full_name: e.target.value})}
                   disabled={loading}
                 />
               </div>
-              
+
+              {/* Current Tickets (only in edit mode) */}
+              {editingId && formData.current_tickets && formData.current_tickets.length > 0 && (
+                <div className="form-group">
+                  <label>Boletas actuales:</label>
+                  <div className="current-tickets-list">
+                    {formData.current_tickets.map(t => (
+                      <span key={t.id} className={`ticket-badge ${t.status}`}>
+                        {t.ticket_number}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="form-group">
-                <label htmlFor="last_name">Last Name *</label>
+                <label htmlFor="ticket_numbers">
+                  {editingId ? "Añadir más boletas" : "Boletas iniciales"} (separadas por coma)
+                </label>
                 <input
-                  id="last_name"
+                  id="ticket_numbers"
                   type="text"
-                  required
-                  placeholder="Enter last name"
-                  value={formData.last_name}
-                  onChange={(e) => setFormData({...formData, last_name: e.target.value})}
+                  placeholder="Ej: 101, 102, 103"
+                  value={formData.ticket_numbers}
+                  onChange={(e) => setFormData({...formData, ticket_numbers: e.target.value})}
                   disabled={loading}
                 />
+                <p className="field-hint">Ingrese números únicos para este participante.</p>
               </div>
-              
-              <div className="form-group">
-                <label htmlFor="document_id">Document ID *</label>
-                <input
-                  id="document_id"
-                  type="text"
-                  required
-                  placeholder="Enter document/ID number"
-                  value={formData.document_id}
-                  onChange={(e) => setFormData({...formData, document_id: e.target.value})}
-                  disabled={loading}
-                />
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="tickets">Tickets</label>
-                <input
-                  id="tickets"
-                  type="number"
-                  min="0"
-                  placeholder="Number of tickets"
-                  value={formData.tickets}
-                  onChange={(e) => setFormData({...formData, tickets: parseInt(e.target.value) || 0})}
-                  disabled={loading}
-                />
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="email">Email</label>
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="participant@example.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  disabled={loading}
-                />
-              </div>
+
+              {/* Error message inside modal for tickets duplicates */}
+              {error && error.includes("boletas") && (
+                <div className="modal-error-message">
+                  {error}
+                </div>
+              )}
               
               <div className="modal-actions">
                 <button 
@@ -475,14 +476,14 @@ export default function Participants() {
                   onClick={handleCloseModal}
                   disabled={loading}
                 >
-                  Cancel
+                  Cancelar
                 </button>
                 <button 
                   type="submit" 
                   className="btn primary" 
                   disabled={loading}
                 >
-                  {loading ? "Saving..." : (editingId ? "Update" : "Create")}
+                  {loading ? "Guardando..." : (editingId ? "Actualizar" : "Crear")}
                 </button>
               </div>
             </form>
