@@ -148,3 +148,63 @@
   color: #0b3a66;
 }
 .reveal-caption{ margin-top: .4rem; color: rgba(2,6,23,0.6); font-weight:700; }
+
+/* Winner Modal Styles */
+.winner-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.45);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: winnerFadeIn 0.3s ease-out;
+}
+
+.winner-modal-content {
+  background: #fff;
+  padding: 3rem 2rem;
+  border-radius: 28px;
+  text-align: center;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
+  max-width: 500px;
+  width: 90%;
+  position: relative;
+  animation: winnerScaleUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.winner-modal-label {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: rgba(2, 6, 23, 0.4);
+  margin-bottom: 0.5rem;
+}
+
+.winner-ticket-number {
+  font-size: 7rem;
+  font-weight: 900;
+  color: #004f9e;
+  line-height: 1;
+  margin: 1rem 0;
+  text-shadow: 3px 3px 0px rgba(255, 210, 74, 0.2);
+}
+
+.winner-name {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #111;
+  margin-bottom: 0.25rem;
+}
+
+.winner-artwork-title {
+  font-size: 1.1rem;
+  color: rgba(2, 6, 23, 0.6);
+  font-weight: 600;
+  margin-bottom: 2rem;
+}
+
+@keyframes winnerFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes winnerScaleUp { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }

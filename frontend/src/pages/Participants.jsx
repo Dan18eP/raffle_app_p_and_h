@@ -25,12 +25,11 @@ export default function Participants() {
     setError(null);
     try {
       const res = await api.get("/participants");
-      // Backend now returns participants with a 'tickets' relationship or count
-      // For the list, we just need the participants
+      // El backend ahora devuelve participantes con una relación de 'tickets'
       setParticipants(res.data);
     } catch (err) {
       console.error("Error loading participants:", err);
-      setError("Failed to load participants");
+      setError("Error al cargar los participantes");
     } finally {
       setLoading(false);
     }
@@ -163,7 +162,7 @@ export default function Participants() {
         headers: { "Content-Type": "multipart/form-data" }
       });
       
-      const summary = `Successfully processed: ${res.data.participants_created || 0} new, ${res.data.participants_reused || 0} merged. ${res.data.tickets_created || 0} tickets added.`;
+      const summary = `Procesado con éxito: ${res.data.participants_created || 0} nuevos, ${res.data.participants_reused || 0} fusionados. ${res.data.tickets_created || 0} boletas añadidas.`;
       setSuccess(summary);
       setUploadFile(null);
       
@@ -177,7 +176,7 @@ export default function Participants() {
       setTimeout(() => setSuccess(null), 5000);
     } catch (err) {
       console.error("Error uploading file:", err);
-      setError(err?.response?.data?.detail || "Error uploading file");
+      setError(err?.response?.data?.detail || "Error al subir el archivo");
     } finally {
       setLoading(false);
     }
@@ -251,7 +250,7 @@ export default function Participants() {
               disabled={loading}
             />
             <label htmlFor="file-upload" className="file-input-label">
-              {uploadFile ? uploadFile.name : "Choose file..."}
+              {uploadFile ? uploadFile.name : "Elegir archivo..."}
             </label>
           </div>
           <button 
@@ -259,7 +258,7 @@ export default function Participants() {
             className="btn secondary"
             disabled={!uploadFile || loading}
           >
-            {loading ? "Uploading..." : "Upload File"}
+            {loading ? "Subiendo..." : "Subir Archivo"}
           </button>
         </form>
       </div>
@@ -301,10 +300,10 @@ export default function Participants() {
 
           <div className="empty-state">
             <div className="empty-icon">📋</div>
-            <h3>No participants yet</h3>
-            <p>Add your first participant or upload a file to get started</p>
+            <h3>Aún no hay participantes</h3>
+            <p>Añade tu primer participante o sube un archivo para comenzar</p>
             <button className="btn primary" onClick={handleCreate}>
-              Add First Participant
+              Añadir primer participante
             </button>
           </div>
         )}
@@ -340,7 +339,7 @@ export default function Participants() {
                       className="btn-icon edit"
                       onClick={() => handleEdit(p)}
                       disabled={loading}
-                      title="Edit participant"
+                      title="Editar participante"
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -351,7 +350,7 @@ export default function Participants() {
                       className="btn-icon delete"
                       onClick={() => handleDelete(p.id)}
                       disabled={loading}
-                      title="Delete participant"
+                      title="Eliminar participante"
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <polyline points="3 6 5 6 21 6" />

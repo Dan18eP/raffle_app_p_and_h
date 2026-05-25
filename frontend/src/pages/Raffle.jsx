@@ -159,6 +159,8 @@ export default function Raffle() {
   }, [history]);
 
   const clearRaffleState = () => {
+    if (!confirm("¿Estás seguro de que deseas limpiar el estado del sorteo? Esto borrará el ganador actual y el historial visible en esta sesión.")) return;
+    
     try {
       localStorage.removeItem("raffle_preview");
       localStorage.removeItem("raffle_winner");
@@ -308,7 +310,7 @@ export default function Raffle() {
                 });
 
                 if (!res?.data || res.data?.detail) {
-                  const message = res?.data?.detail || "No winner returned";
+                  const message = res?.data?.detail || "No se obtuvo un ganador";
                   setServerError(message);
                   setWinner({ error: message });
                 } else {
@@ -337,10 +339,10 @@ export default function Raffle() {
                   await refreshArtworksCount();
                 }
               } catch (err) {
-                const message = err?.response?.data?.detail || "Error running raffle";
+                const message = err?.response?.data?.detail || "Error al ejecutar el sorteo";
                 setWinner({ error: message });
-                setServerError(message + (err?.response?.status ? ` (status ${err.response.status})` : ""));
-                console.error("Reveal error:", err);
+                setServerError(message + (err?.response?.status ? ` (estado ${err.response.status})` : ""));
+                console.error("Error en revelación:", err);
               } finally {
                 setLoading(false);
                 setCountdown(null);
@@ -354,14 +356,16 @@ export default function Raffle() {
         });
       }, 1000);
     } catch (err) {
-      console.error("Error during reveal start:", err);
-      setServerError("Failed to start reveal");
+      console.error("Error al iniciar la revelación:", err);
+      setServerError("Fallo al iniciar la revelación");
       setRevealing(false);
       setCountdown(null);
     }
   };
 
   const runTest = async () => {
+    if (!confirm("¿Estás seguro de ejecutar el simulacro completo? Esto asignará ganadores a todas las obras disponibles automáticamente.")) return;
+
     setLoading(true);
     try {
       const res = await api.post("/raffle/test", null, {
@@ -377,7 +381,7 @@ export default function Raffle() {
       refreshArtworksCount();
 
     } catch (err) {
-      const message = err?.response?.data?.detail || "Error en simulacro";
+      const message = err?.response?.data?.detail || "Error en el simulacro";
       setServerError(message);
     } finally {
       setLoading(false);
@@ -426,16 +430,22 @@ export default function Raffle() {
           </div>
 
           {winner && (
-            <div className="result-card">
-              {winner.error ? (
-                <div style={{ color: "#bf2b2b", fontWeight:700 }}>{winner.error}</div>
-              ) : (
-                <>
-                  <div style={{ fontWeight: 800 }}>{winner.artwork}</div>
-                  <div style={{ marginTop: ".5rem" }}>Ganador: <strong>{winner.winner}</strong></div>
-                  <div style={{ fontSize: "0.9rem", color: "rgba(2,6,23,0.6)" }}>Boleta: {winner.ticket_number}</div>
-                </>
-              )}
+            <div className="winner-modal-overlay">
+              <div className="winner-modal-content">
+                {winner.error ? (
+                  <div style={{ color: "#bf2b2b", fontWeight: 700, padding: "2rem" }}>{winner.error}</div>
+                ) : (
+                  <>
+                    <div className="winner-modal-label">¡Tenemos un ganador!</div>
+                    <div className="winner-ticket-number">{winner.ticket_number}</div>
+                    <div className="winner-name">{winner.winner}</div>
+                    <div className="winner-artwork-title">{winner.artwork}</div>
+                    <button className="btn primary" onClick={() => setWinner(null)} style={{ width: "100%", padding: "1rem" }}>
+                      Continuar Sorteo
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           )}
 
