@@ -16,7 +16,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all for now or keep user preference
+    allow_origins=[
+        "http://localhost:5173",
+        "https://raffle-app-p-and-h.vercel.app"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

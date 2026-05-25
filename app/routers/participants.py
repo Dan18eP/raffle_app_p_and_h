@@ -158,5 +158,13 @@ def delete_participant(participant_id: int, db: Session = Depends(get_db)):
     if not participant:
         raise HTTPException(status_code=404, detail="Participant not found")
 
+    # Force delete raffle associations if this participant has winners
+    # This allows cleaning up data during testing phase
+    ticket_ids = [t.id for t in participant.tickets]
+    if ticket_ids:
+        db.query(models.Raffle).filter(
+            models.Raffle.winner_ticket_id.in_(ticket_ids)
+        ).delete(synchronize_session=False)
+
     db.delete(participant)
     db.commit()
