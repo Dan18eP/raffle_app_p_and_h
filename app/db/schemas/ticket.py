@@ -13,13 +13,11 @@ class TicketStatus(str, Enum):
 
 class TicketCreate(BaseModel):
     participant_id: int = Field(..., gt=0)
-    raffle_id: int = Field(..., gt=0)
     ticket_number: str = Field(..., min_length=1, max_length=10)
 
 
 class TicketBulkCreate(BaseModel):
     participant_id: int = Field(..., gt=0)
-    raffle_id: int = Field(..., gt=0)
     ticket_numbers: List[str] = Field(..., min_length=1)
 
 
@@ -30,7 +28,6 @@ class TicketUpdate(BaseModel):
 class TicketOut(BaseModel):
     id: int
     participant_id: int
-    raffle_id: int
     ticket_number: str
     status: TicketStatus
     assigned_at: datetime
