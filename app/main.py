@@ -1,9 +1,13 @@
 # Main application file
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-
+from app.db.database import engine, Base
+from app.db import models # Ensure models are loaded
 from app.routers import participants, artworks, auth, admin, raffle, tickets
 
+
+# Create tables on startup
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Peace & Hope Raffle API")
 
