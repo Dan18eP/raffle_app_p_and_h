@@ -35,7 +35,14 @@ def get_next_artwork(
     _: models.Admin = Depends(get_current_admin)
 ):
     awarded_ids = {r.artwork_id for r in db.query(Raffle.artwork_id).filter(Raffle.status == RaffleStatus.COMPLETED).all()}
-    artwork = db.query(models.Artwork).filter(models.Artwork.id.notin_(awarded_ids) if awarded_ids else True).first()
+    
+    query = db.query(models.Artwork)
+    if awarded_ids:
+        query = query.filter(models.Artwork.id.notin_(awarded_ids))
+    
+    # Ordenar por artista A-Z
+    artwork = query.order_by(models.Artwork.artist.asc(), models.Artwork.name.asc()).first()
+    
     if not artwork:
         raise HTTPException(status_code=404, detail="No artworks available for raffle")
     return {"id": artwork.id, "artwork": artwork.name, "artist": artwork.artist, "image_url": artwork.image_url}

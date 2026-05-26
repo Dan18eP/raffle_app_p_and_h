@@ -51,7 +51,7 @@ def create_artworks_bulk(artworks: List[ArtworkCreate], db: Session = Depends(ge
 #READ ALL
 @router.get("/", response_model=list[ArtworkOut])
 def get_artworks(db: Session = Depends(get_db)):
-    return db.query(models.Artwork).all()
+    return db.query(models.Artwork).order_by(models.Artwork.id.asc()).all()
 
 #COUNT ARTWORKS
 @router.get("/count")
