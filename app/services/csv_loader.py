@@ -1,12 +1,25 @@
 # app/services/csv_loader.py
 import pandas as pd
+import unicodedata
 from sqlalchemy.orm import Session
 from app.db import models
 
+def strip_accents(s):
+    return ''.join(c for c in unicodedata.normalize('NFD', s)
+                  if unicodedata.category(c) != 'Mn')
+
+def clean_header(h):
+    # Convierte a string, quita espacios, acentos y símbolos
+    h = strip_accents(str(h)).strip().lower()
+    for char in ['#', '°', 'nro', 'num', '.', ':', '_', ' ', '-', '(', ')']:
+        h = h.replace(char, '')
+    return h.strip()
+
 def load_participants_from_file(file_path: str, db: Session) -> dict:
     """
-    Loads participants and their tickets from CSV or Excel into the database.
-    Supports merging participants by full_name and global ticket uniqueness.
+    Carga participantes y sus boletas desde CSV o Excel.
+    Implementa un 'Header Hunter' para encontrar las columnas correctas
+    incluso si hay filas vacías o títulos al inicio del archivo.
     """
     if file_path.endswith(".csv"):
         df = pd.read_csv(file_path)
@@ -15,40 +28,48 @@ def load_participants_from_file(file_path: str, db: Session) -> dict:
     else:
         raise ValueError("Unsupported file format")
 
-    # Limpieza agresiva de encabezados: minúsculas, sin espacios y sin símbolos como #, °, etc.
-    def clean_header(h):
-        h = str(h).strip().lower()
-        for char in ['#', '°', 'nro', 'num', '.', ':', '_']:
-            h = h.replace(char, '')
-        return h.strip()
-
-    cleaned_cols = {clean_header(col): col for col in df.columns}
-    
-    # Mapping for flexible column names
+    # Mapping for flexible column names (sin acentos ni símbolos)
     col_map = {
         "full_name": ["fullname", "nombrecompleto", "nombre", "participante", "comprador", "compradores", "cliente", "persona"],
-        "ticket_number": ["ticketnumber", "ticket", "boleta", "numeroboleta", "nroboleta", "boletas", "nro", "numero", "idboleta"]
+        "ticket_number": ["ticketnumber", "ticket", "boleta", "numeroboleta", "nroboleta", "boletas", "nro", "numero", "idboleta", "talonario"]
     }
     
     actual_cols = {}
-    for standard, options in col_map.items():
-        # 1. Intentar coincidencia exacta con nombres limpios
-        for opt in options:
-            if opt in cleaned_cols:
-                actual_cols[standard] = cleaned_cols[opt]
-                break
-        
-        # 2. Si no hay coincidencia, intentar si alguna columna CONTIENE la palabra clave
-        if standard not in actual_cols:
-            for clean_h, original_col in cleaned_cols.items():
-                for opt in options:
-                    if opt in clean_h:
-                        actual_cols[standard] = original_col
-                        break
-                if standard in actual_cols: break
     
-    if "full_name" not in actual_cols or "ticket_number" not in actual_cols:
-        raise ValueError(f"No se encontró la columna de 'Comprador' o 'Boleta'. Columnas detectadas: {list(df.columns)}")
+    # --- SMART HEADER HUNTER ---
+    # Buscamos en las primeras 10 filas del archivo por si los encabezados no están en la fila 1
+    for i in range(10):
+        cleaned_cols = {clean_header(col): col for col in df.columns if not str(col).lower().startswith('unnamed')}
+        
+        # Intentar encontrar mapeo para ambos campos requeridos
+        temp_map = {}
+        for standard, options in col_map.items():
+            # 1. Coincidencia exacta
+            for opt in options:
+                if opt in cleaned_cols:
+                    temp_map[standard] = cleaned_cols[opt]
+                    break
+            
+            # 2. Búsqueda por sub-cadena si no se encontró exacta
+            if standard not in temp_map:
+                for clean_h, original_col in cleaned_cols.items():
+                    if any(opt in clean_h for opt in options):
+                        temp_map[standard] = original_col
+                        break
+        
+        # ¿Encontramos ambos?
+        if "full_name" in temp_map and "ticket_number" in temp_map:
+            actual_cols = temp_map
+            break
+            
+        # Si no encontramos y aún hay filas, bajamos una fila (usamos la fila 0 como nuevos nombres de columnas)
+        if i < 9 and len(df) > 0:
+            df.columns = df.iloc[0]
+            df = df[1:].reset_index(drop=True)
+        else:
+            # Si llegamos al final sin éxito, lanzamos el error original con contexto
+            detected = [str(c) for c in df.columns]
+            raise ValueError(f"No se encontró la columna de 'Comprador' o 'Boleta'. Columnas analizadas en fila {i+1}: {detected}")
 
     stats = {
         "participants_created": 0,
@@ -69,7 +90,6 @@ def load_participants_from_file(file_path: str, db: Session) -> dict:
                 continue
 
             # Validate and format ticket
-            # Remove decimals if pandas read them from Excel (e.g. "1.0")
             if "." in raw_ticket:
                 raw_ticket = raw_ticket.split(".")[0]
                 
