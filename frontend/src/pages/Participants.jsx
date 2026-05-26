@@ -41,7 +41,7 @@ export default function Participants() {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get("/participants");
+      const res = await api.get("/participants/");
       // El backend ahora devuelve participantes con una relación de 'tickets'
       setParticipants(res.data);
     } catch (err) {
@@ -65,7 +65,7 @@ export default function Participants() {
         await api.put(`/participants/${editingId}`, { full_name: formData.full_name });
       } else {
         // Create new participant
-        const res = await api.post("/participants", { full_name: formData.full_name });
+        const res = await api.post("/participants/", { full_name: formData.full_name });
         participantId = res.data.id;
       }
 

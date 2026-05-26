@@ -79,7 +79,7 @@ export default function Raffle() {
       try {
         const [availableRes, parts] = await Promise.all([
           api.get("/raffle/available-count"),
-          api.get("/participants"),
+          api.get("/participants/"),
         ]);
         setArtworksCount(availableRes.data.count);
         setParticipantsCount(parts.data.length);

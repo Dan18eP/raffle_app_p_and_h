@@ -27,7 +27,7 @@ export default function Artworks() {
     try {
       const [artsRes, awardedRes] = await Promise.all([
         api.get("/artworks/"),
-        api.get("/raffle/awarded/"),
+        api.get("/raffle/awarded"),
       ]);
 
       setArtworks(artsRes.data || []);
@@ -64,8 +64,7 @@ export default function Artworks() {
 
     try {
       if (editingId) {
-        // Usar barra final para evitar redirects 307
-        await api.put(`/artworks/${editingId}/`, fd);
+        await api.put(`/artworks/${editingId}`, fd);
         setSuccess("Obra actualizada.");
       } else {
         await api.post("/artworks/", fd);
@@ -89,7 +88,7 @@ export default function Artworks() {
     }
     if (!confirm("¿Eliminar esta obra?")) return;
     try {
-      await api.delete(`/artworks/${id}/`);
+      await api.delete(`/artworks/${id}`);
       setDetailArtwork(null);
       await fetchData();
       setSuccess("Obra eliminada.");
