@@ -57,7 +57,7 @@ def get_next_artwork(
     if not artwork:
         raise HTTPException(status_code=404, detail="No artworks available for raffle")
 
-    return {"id": artwork.id, "artwork": artwork.name, "artist": artwork.artist}
+    return {"id": artwork.id, "artwork": artwork.name, "artist": artwork.artist, "image_url": artwork.image_url}
 
 
 @router.post("/run", status_code=status.HTTP_200_OK)

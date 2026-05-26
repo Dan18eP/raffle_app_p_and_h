@@ -473,7 +473,7 @@ export default function Raffle() {
                          {winner.artwork}
                        </div>
                     </div>
-                    <button className="btn primary" onClick={() => setWinner(null)} style={{ width: "100%", padding: "1rem" }}>
+                    <button className="btn primary" onClick={() => { setWinner(null); setPreview(null); }} style={{ width: "100%", padding: "1rem" }}>
                       Continuar Sorteo
                     </button>
                   </>
