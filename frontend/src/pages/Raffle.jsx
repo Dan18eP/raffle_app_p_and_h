@@ -501,24 +501,31 @@ export default function Raffle() {
       </main>
 
       <aside className="sidebar-panel">
-        <h3 style={{ marginTop: 0 }}>Control del Sorteo</h3>
+        <h3 style={{ marginTop: 0 }}>Obra a sortear</h3>
         
-        <p style={{ color: "rgba(2,6,23,0.6)" }}>Usa los controles para elegir y revelar. El simulacro ejecuta el sorteo para todas las obras.</p>
-
-        <div style={{ marginTop: "1rem" }}>
-          <button className="btn primary" onClick={() => { previewNext(); }} style={{ width: "100%" }} disabled={loading}>Generar obra</button>
+        <div className="raffle-image-container" style={{ 
+          background: "rgba(0,0,0,0.03)", 
+          borderRadius: "12px", 
+          minHeight: "240px", 
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          overflow: "hidden",
+          border: "1px solid rgba(0,0,0,0.05)",
+          marginBottom: "1.5rem"
+        }}>
+          {preview?.image_url ? (
+            <img src={preview.image_url} alt="Obra" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+          ) : (
+            <span style={{ color: "rgba(0,0,0,0.2)", fontWeight: 600 }}>Esperando obra...</span>
+          )}
         </div>
 
         {!isProductionMode && (
-          <>
-            <div style={{ marginTop: "1rem" }}>
-              <button className="btn secondary" onClick={() => { runTest(); }} style={{ width: "100%" }} disabled={loading}>Ejecutar simulacro (todo)</button>
-            </div>
-
-            <div style={{ marginTop: "1rem" }}>
-              <button className="btn ghost" onClick={clearRaffleState}>Limpiar / Reset</button>
-            </div>
-          </>
+          <div style={{ marginTop: "auto", paddingTop: "1rem", borderTop: "1px solid rgba(0,0,0,0.05)" }}>
+            <button className="btn secondary" onClick={runTest} style={{ width: "100%", marginBottom: "0.5rem" }} disabled={loading}>Ejecutar simulacro (todo)</button>
+            <button className="btn ghost" onClick={clearRaffleState} style={{ width: "100%" }}>Limpiar / Reset</button>
+          </div>
         )}
       </aside>
 

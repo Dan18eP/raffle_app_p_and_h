@@ -20,3 +20,12 @@ class ParticipantOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ParticipantListOut(BaseModel):
+    id: int
+    full_name: str
+    created_at: datetime
+    # We remove the full tickets list for performance in the list view
+
+    class Config:
+        from_attributes = True

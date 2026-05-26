@@ -10,6 +10,7 @@ from app.db.schemas.participant import (
     ParticipantCreate,
     ParticipantOut,
     ParticipantUpdate,
+    ParticipantListOut,
 )
 
 import shutil
@@ -101,11 +102,11 @@ def get_participants_count(db: Session = Depends(get_db)):
     return {"count": db.query(models.Participant).count()}
 
 
-# READ ALL (PAGINATED)
-@router.get("/", response_model=list[ParticipantOut])
+# READ ALL (OPTIMIZED)
+@router.get("/", response_model=list[ParticipantListOut])
 def get_participants(
     skip: int = 0, 
-    limit: int = 100, # Reduced limit for significantly faster loading
+    limit: int = 10000, 
     db: Session = Depends(get_db)
 ):
     return db.query(models.Participant).offset(skip).limit(limit).all()
