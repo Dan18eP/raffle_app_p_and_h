@@ -10,6 +10,23 @@ const parseError = (err) => {
 };
 
 export default function Artworks() {
+  const [isProductionMode, setIsProductionMode] = useState(() => {
+    try {
+      const saved = localStorage.getItem("raffle_mode");
+      return saved ? JSON.parse(saved) : false;
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    const handleModeChange = (e) => {
+      setIsProductionMode(e.detail);
+    };
+    window.addEventListener("raffle_mode_change", handleModeChange);
+    return () => window.removeEventListener("raffle_mode_change", handleModeChange);
+  }, []);
+
   const [artworks, setArtworks] = useState([]);
   const [awarded, setAwarded] = useState(new Set());
   const [loading, setLoading] = useState(true);
@@ -125,13 +142,43 @@ export default function Artworks() {
     setError(null);
   };
 
+  const handleResetArtworks = async () => {
+    if (!confirm("¿ESTÁS COMPLETAMENTE SEGURO? Esto eliminará TODAS las obras, sus imágenes y los resultados de los sorteos permanentemente.")) return;
+    
+    setLoading(true);
+    setError(null);
+    try {
+      await api.delete("/artworks/reset/all");
+      setSuccess("Todas las obras y datos asociados han sido eliminados.");
+      await fetchData();
+      setTimeout(() => setSuccess(null), 5000);
+    } catch (err) {
+      console.error("Error resetting artworks:", err);
+      setError("Error al intentar eliminar todas las obras");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading && artworks.length === 0) return <div style={{padding:"2rem"}}>Cargando obras...</div>;
 
   return (
     <div className="artworks-container">
       <div className="artworks-header">
         <h1>Obras de Arte</h1>
-        <button className="btn-add" onClick={() => openEditModal()}>+ Agregar</button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          {!isProductionMode && artworks.length > 0 && (
+            <button 
+              className="btn-add" 
+              onClick={handleResetArtworks} 
+              style={{ background: '#bf2b2b', borderColor: '#bf2b2b' }}
+              disabled={loading}
+            >
+              🗑️ Limpiar Todo
+            </button>
+          )}
+          <button className="btn-add" onClick={() => openEditModal()}>+ Agregar</button>
+        </div>
       </div>
 
       {error && <div className="msg msg--error">{error}</div>}

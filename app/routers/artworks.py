@@ -8,10 +8,27 @@ from app.db.schemas.artwork import ArtworkCreate, ArtworkOut, ArtworkUpdate
 from typing import List, Optional
 from app.utils.storage import upload_file_to_supabase, delete_file_from_supabase
 
+from sqlalchemy import text
+
 router = APIRouter(
     prefix="/artworks",
     tags=["Artworks"]
 )
+
+# RESET ALL (TESTING ONLY)
+@router.delete("/reset/all", status_code=status.HTTP_204_NO_CONTENT)
+def reset_artworks(db: Session = Depends(get_db)):
+    artworks = db.query(models.Artwork).all()
+    for artwork in artworks:
+        if artwork.image_url:
+            try:
+                delete_file_from_supabase(artwork.image_url)
+            except:
+                pass # Continue even if file delete fails
+    
+    db.execute(text("TRUNCATE TABLE artworks RESTART IDENTITY CASCADE"))
+    db.commit()
+
 
 #CREATE
 @router.post("/", response_model=ArtworkOut, status_code=status.HTTP_201_CREATED)
