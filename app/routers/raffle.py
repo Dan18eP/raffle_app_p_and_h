@@ -1,6 +1,6 @@
 # app/routers/raffle.py
 from fastapi import APIRouter, Depends, HTTPException, status, Body
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import text
 
 from app.db.database import get_db
@@ -20,21 +20,12 @@ def run_raffle_test_endpoint(
     db: Session = Depends(get_db),
     _: models.Admin = Depends(get_current_admin)
 ):
-    # Safety check: prevent re-running if all artworks already awarded
-    already_run = db.query(Raffle).filter(
-        Raffle.status == RaffleStatus.COMPLETED
-    ).first()
+    already_run = db.query(Raffle).filter(Raffle.status == RaffleStatus.COMPLETED).first()
     if already_run:
-        raise HTTPException(
-            status_code=409,
-            detail="Raffle has already been executed"
-        )
-
+        raise HTTPException(status_code=409, detail="Raffle has already been executed")
     result = run_raffle(db)
-
     if "detail" in result:
         raise HTTPException(status_code=400, detail=result["detail"])
-
     return result
 
 
@@ -43,20 +34,10 @@ def get_next_artwork(
     db: Session = Depends(get_db),
     _: models.Admin = Depends(get_current_admin)
 ):
-    awarded_ids = {
-        r.artwork_id for r in
-        db.query(Raffle.artwork_id)
-        .filter(Raffle.status == RaffleStatus.COMPLETED)
-        .all()
-    }
-
-    artwork = db.query(models.Artwork).filter(
-        models.Artwork.id.notin_(awarded_ids) if awarded_ids else True
-    ).first()
-
+    awarded_ids = {r.artwork_id for r in db.query(Raffle.artwork_id).filter(Raffle.status == RaffleStatus.COMPLETED).all()}
+    artwork = db.query(models.Artwork).filter(models.Artwork.id.notin_(awarded_ids) if awarded_ids else True).first()
     if not artwork:
         raise HTTPException(status_code=404, detail="No artworks available for raffle")
-
     return {"id": artwork.id, "artwork": artwork.name, "artist": artwork.artist, "image_url": artwork.image_url}
 
 
@@ -67,10 +48,8 @@ def run_raffle_endpoint(
     artwork_id: int | None = Body(None, embed=True)
 ):
     result = run_raffle_single(db, artwork_id=artwork_id)
-
     if "detail" in result:
         raise HTTPException(status_code=400, detail=result["detail"])
-
     return result
 
 
@@ -79,26 +58,14 @@ def get_awarded_artworks(
     db: Session = Depends(get_db),
     _: models.Admin = Depends(get_current_admin)
 ):
-    ids = [
-        r.artwork_id for r in
-        db.query(Raffle.artwork_id)
-        .filter(Raffle.status == RaffleStatus.COMPLETED)
-        .all()
-    ]
+    ids = [r.artwork_id for r in db.query(Raffle.artwork_id).filter(Raffle.status == RaffleStatus.COMPLETED).all()]
     return {"awarded": ids}
 
 
 @router.get("/available-count")
 def available_artworks_count(db: Session = Depends(get_db)):
-    awarded_ids = {
-        r.artwork_id for r in
-        db.query(Raffle.artwork_id)
-        .filter(Raffle.status == RaffleStatus.COMPLETED)
-        .all()
-    }
-    count = db.query(models.Artwork).filter(
-        models.Artwork.id.notin_(awarded_ids) if awarded_ids else True
-    ).count()
+    awarded_ids = {r.artwork_id for r in db.query(Raffle.artwork_id).filter(Raffle.status == RaffleStatus.COMPLETED).all()}
+    count = db.query(models.Artwork).filter(models.Artwork.id.notin_(awarded_ids) if awarded_ids else True).count()
     return {"count": count}
 
 
@@ -113,10 +80,8 @@ def get_last_result(
         .order_by(Raffle.drawn_at.desc())
         .first()
     )
-
     if not raffle or not raffle.winner_ticket:
         return {"result": None}
-
     return {
         "result": {
             "participant": raffle.winner_ticket.participant.full_name,
@@ -133,10 +98,7 @@ def validate_artwork(
     db: Session = Depends(get_db),
     _: models.Admin = Depends(get_current_admin)
 ):
-    already = db.query(Raffle).filter(
-        Raffle.artwork_id == artwork_id,
-        Raffle.status == RaffleStatus.COMPLETED,
-    ).first()
+    already = db.query(Raffle).filter(Raffle.artwork_id == artwork_id, Raffle.status == RaffleStatus.COMPLETED).first()
     return {"valid": already is None}
 
 
@@ -145,12 +107,8 @@ def reset_raffle(
     db: Session = Depends(get_db),
     _: models.Admin = Depends(get_current_admin)
 ):
-    # 1. Elimina todos los sorteos realizados
     db.execute(text("TRUNCATE TABLE raffles RESTART IDENTITY CASCADE"))
-    
-    # 2. Resetear el estado de TODAS las boletas a 'eligible'
     db.query(models.Ticket).update({models.Ticket.status: models.TicketStatus.ELIGIBLE})
-    
     db.commit()
 
 
@@ -161,6 +119,10 @@ def get_raffle_history(
 ):
     raffles = (
         db.query(Raffle)
+        .options(
+            joinedload(Raffle.artwork),
+            joinedload(Raffle.winner_ticket).joinedload(models.Ticket.participant)
+        )
         .filter(Raffle.status == RaffleStatus.COMPLETED)
         .order_by(Raffle.drawn_at.desc())
         .all()
