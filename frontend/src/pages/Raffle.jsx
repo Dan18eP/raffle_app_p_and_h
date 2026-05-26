@@ -400,8 +400,8 @@ export default function Raffle() {
     <div className="raffle-page">
       <main className="raffle-main">
         <div className="raffle-hero">
-          <h1 style={{ margin: 0, color: "#004f9e"}}>Sorteo — Adjudicación de Obras</h1>
-          <p style={{ margin: 0, color: "rgba(2,6,23,0.65)" }}>Genera la siguiente obra a presentar, luego revela al ganador. Usa el modo prueba para simular todo el sorteo.</p>
+          <h1 style={{ margin: 0, color: "#004f9e"}}>Sorteo — Arte para Educar 2026</h1>
+          <p style={{ margin: 0, color: "rgba(2,6,23,0.65)" }}>Genera la siguiente obra a presentar, luego revela al ganador.</p>
 
           <div className="stats">
             <div className="stat">
