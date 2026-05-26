@@ -3,6 +3,23 @@ import api from "../services/api";
 import "../Participants.css";
 
 export default function Participants() {
+  const [isProductionMode, setIsProductionMode] = useState(() => {
+    try {
+      const saved = localStorage.getItem("raffle_mode");
+      return saved ? JSON.parse(saved) : false;
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    const handleModeChange = (e) => {
+      setIsProductionMode(e.detail);
+    };
+    window.addEventListener("raffle_mode_change", handleModeChange);
+    return () => window.removeEventListener("raffle_mode_change", handleModeChange);
+  }, []);
+
   // State variables
   const [participants, setParticipants] = useState([]);
   const [search, setSearch] = useState("");
@@ -191,6 +208,24 @@ export default function Participants() {
     }
   };
 
+  const handleResetParticipants = async () => {
+    if (!confirm("¿ESTÁS COMPLETAMENTE SEGURO? Esto eliminará a TODOS los participantes, sus boletas y los resultados de los sorteos permanentemente.")) return;
+    
+    setLoading(true);
+    setError(null);
+    try {
+      await api.delete("/participants/reset/all");
+      setSuccess("Todos los participantes y datos asociados han sido eliminados.");
+      await fetchParticipants();
+      setTimeout(() => setSuccess(null), 5000);
+    } catch (err) {
+      console.error("Error resetting participants:", err);
+      setError("Error al intentar eliminar todos los participantes");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Upload file
   const handleFileUpload = async (e) => {
     e.preventDefault();
@@ -255,6 +290,11 @@ export default function Participants() {
         </div>
         
         <div className="header-actions">
+          {!isProductionMode && participants.length > 0 && (
+            <button className="btn ghost" onClick={handleResetParticipants} disabled={loading} style={{ borderColor: "#bf2b2b", color: "#bf2b2b" }}>
+              🗑️ Limpiar Todo
+            </button>
+          )}
           <button className="btn primary" onClick={handleCreate} disabled={loading}>
             <span className="btn-icon">+</span> Añadir Participante
           </button>

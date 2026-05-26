@@ -19,8 +19,8 @@ def load_participants_from_file(file_path: str, db: Session) -> dict:
     
     # Mapping for flexible column names
     col_map = {
-        "full_name": ["full_name", "nombre_completo", "nombre", "participante"],
-        "ticket_number": ["ticket_number", "ticket", "boleta", "numero_boleta", "nro_boleta"]
+        "full_name": ["full_name", "nombre_completo", "nombre", "participante", "comprador", "cliente", "persona"],
+        "ticket_number": ["ticket_number", "ticket", "boleta", "numero_boleta", "nro_boleta", "nro", "numero", "id_boleta"]
     }
     
     actual_cols = {}

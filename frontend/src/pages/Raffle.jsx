@@ -15,12 +15,12 @@ export default function Raffle() {
   });
 
   useEffect(() => {
-    try {
-      localStorage.setItem("raffle_mode", JSON.stringify(isProductionMode));
-    } catch (err) {
-      console.warn("Could not persist raffle mode:", err);
-    }
-  }, [isProductionMode]);
+    const handleModeChange = (e) => {
+      setIsProductionMode(e.detail);
+    };
+    window.addEventListener("raffle_mode_change", handleModeChange);
+    return () => window.removeEventListener("raffle_mode_change", handleModeChange);
+  }, []);
 
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState(null); // {id, artwork}
@@ -481,17 +481,6 @@ export default function Raffle() {
       <aside className="sidebar-panel">
         <h3 style={{ marginTop: 0 }}>Control del Sorteo</h3>
         
-        <div style={{ marginBottom: "1.5rem", padding: "0.8rem", background: "rgba(255,255,255,0.5)", borderRadius: "10px", border: "1px solid rgba(0,79,158,0.1)" }}>
-          <label style={{ display: "flex", alignItems: "center", gap: ".5rem", fontWeight: 600, cursor: "pointer" }}>
-            <input
-              type="checkbox"
-              checked={isProductionMode}
-              onChange={(e) => setIsProductionMode(e.target.checked)}
-            />
-            {isProductionMode ? "Modo producción" : "Modo prueba"}
-          </label>
-        </div>
-
         <p style={{ color: "rgba(2,6,23,0.6)" }}>Usa los controles para elegir y revelar. El simulacro ejecuta el sorteo para todas las obras.</p>
 
         <div style={{ marginTop: "1rem" }}>

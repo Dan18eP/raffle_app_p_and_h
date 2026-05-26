@@ -1,11 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import "../Sidebar.css";
 import logo from "../assets/logopandh.jpg";
 
 export default function Sidebar() {
-
   const [collapsed, setCollapsed] = useState(false);
+  const [isProductionMode, setIsProductionMode] = useState(() => {
+    try {
+      const saved = localStorage.getItem("raffle_mode");
+      return saved ? JSON.parse(saved) : false;
+    } catch {
+      return false;
+    }
+  });
+
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -13,6 +21,13 @@ export default function Sidebar() {
     localStorage.removeItem("session_expired");
     localStorage.removeItem("session_expired_message");
     navigate("/");
+  };
+
+  const toggleProductionMode = (val) => {
+    setIsProductionMode(val);
+    localStorage.setItem("raffle_mode", JSON.stringify(val));
+    // Notificar a otras páginas del cambio
+    window.dispatchEvent(new CustomEvent("raffle_mode_change", { detail: val }));
   };
 
     return (
@@ -121,7 +136,22 @@ export default function Sidebar() {
       </nav>
 
       <div className="sidebar-footer">
+        {!collapsed && (
+          <div className="mode-toggle-section">
+            <span className="mode-label">{isProductionMode ? "Producción" : "Prueba"}</span>
+            <label className="switch-bar">
+              <input
+                type="checkbox"
+                checked={isProductionMode}
+                onChange={(e) => toggleProductionMode(e.target.checked)}
+              />
+              <span className="slider-round"></span>
+            </label>
+          </div>
+        )}
+
         <button className="logout-btn" onClick={handleLogout} title="Cerrar sesión">
+
           {/* Ícono de logout */}
           <span className="icon">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

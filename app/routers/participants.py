@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import text
 from typing import List
 
 from app.db.database import get_db
@@ -168,3 +169,11 @@ def delete_participant(participant_id: int, db: Session = Depends(get_db)):
 
     db.delete(participant)
     db.commit()
+
+
+    # RESET ALL (TESTING ONLY)
+    @router.delete("/reset/all", status_code=status.HTTP_204_NO_CONTENT)
+    def reset_participants(db: Session = Depends(get_db)):
+        # Truncate participants will also clear tickets and raffles due to CASCADE
+        db.execute(text("TRUNCATE TABLE participants RESTART IDENTITY CASCADE"))
+        db.commit()
