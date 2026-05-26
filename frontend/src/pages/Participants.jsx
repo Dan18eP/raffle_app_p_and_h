@@ -414,9 +414,9 @@ export default function Participants() {
                 </tr>
               </thead>
             <tbody>
-              {paginated.map((p) => (
+              {paginated.map((p, idx) => (
                 <tr key={p.id}>
-                  <td className="id-cell">{p.id}</td>
+                  <td className="id-cell">{(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}</td>
                   <td className="name-cell">{p.full_name}</td>
                   <td className="tickets-cell-table">
                     <div className="table-tickets-container">
