@@ -15,23 +15,40 @@ def load_participants_from_file(file_path: str, db: Session) -> dict:
     else:
         raise ValueError("Unsupported file format")
 
-    df.columns = df.columns.str.strip().str.lower()
+    # Limpieza agresiva de encabezados: minúsculas, sin espacios y sin símbolos como #, °, etc.
+    def clean_header(h):
+        h = str(h).strip().lower()
+        for char in ['#', '°', 'nro', 'num', '.', ':', '_']:
+            h = h.replace(char, '')
+        return h.strip()
+
+    cleaned_cols = {clean_header(col): col for col in df.columns}
     
     # Mapping for flexible column names
     col_map = {
-        "full_name": ["full_name", "nombre_completo", "nombre", "participante", "comprador", "cliente", "persona"],
-        "ticket_number": ["ticket_number", "ticket", "boleta", "numero_boleta", "nro_boleta", "nro", "numero", "id_boleta"]
+        "full_name": ["fullname", "nombrecompleto", "nombre", "participante", "comprador", "compradores", "cliente", "persona"],
+        "ticket_number": ["ticketnumber", "ticket", "boleta", "numeroboleta", "nroboleta", "boletas", "nro", "numero", "idboleta"]
     }
     
     actual_cols = {}
     for standard, options in col_map.items():
+        # 1. Intentar coincidencia exacta con nombres limpios
         for opt in options:
-            if opt in df.columns:
-                actual_cols[standard] = opt
+            if opt in cleaned_cols:
+                actual_cols[standard] = cleaned_cols[opt]
                 break
+        
+        # 2. Si no hay coincidencia, intentar si alguna columna CONTIENE la palabra clave
+        if standard not in actual_cols:
+            for clean_h, original_col in cleaned_cols.items():
+                for opt in options:
+                    if opt in clean_h:
+                        actual_cols[standard] = original_col
+                        break
+                if standard in actual_cols: break
     
     if "full_name" not in actual_cols or "ticket_number" not in actual_cols:
-        raise ValueError(f"Missing required columns. Expected something like 'full_name' and 'ticket_number'. Found: {list(df.columns)}")
+        raise ValueError(f"No se encontró la columna de 'Comprador' o 'Boleta'. Columnas detectadas: {list(df.columns)}")
 
     stats = {
         "participants_created": 0,
