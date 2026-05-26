@@ -69,13 +69,14 @@ export default function History() {
               </tr>
             </thead>
             <tbody>
-              {history.map((item) => (
+              {history.map((item, idx) => (
                 <tr key={item.raffle_id}>
                   <td className="date-cell">
                     {new Date(item.drawn_at).toLocaleString('es-CO', { timeZone: 'America/Bogota' })}
                   </td>
-                  <td className="name-cell" style={{ fontWeight: 700 }}>
-                    {item.artwork_name}
+                  <td className="name-cell">
+                    <div style={{ fontWeight: 700, color: "var(--primary)" }}>{item.artist}</div>
+                    <div style={{ fontSize: "0.9rem", opacity: 0.8 }}>{item.artwork_name}</div>
                   </td>
                   <td className="name-cell">
                     {item.winner_full_name}

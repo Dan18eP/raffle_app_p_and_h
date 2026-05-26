@@ -415,7 +415,7 @@ export default function Raffle() {
           </div>
 
           <div className="controls">
-            <button className="btn secondary" onClick={previewNext} disabled={loading || revealing}>Previsualizar siguiente obra</button>
+            <button className="btn secondary" onClick={previewNext} disabled={loading || revealing}>Siguiente obra</button>
             <button className="btn primary" onClick={revealWinner} disabled={loading || !preview?.id || revealing}>{revealing ? "Revelando..." : "Revelar ganador"}
   
             </button>
@@ -425,8 +425,21 @@ export default function Raffle() {
           </div>
 
           <div className="preview">
-            <h3>Previsualización</h3>
-            <p>{preview ? preview.artwork : "Presiona \"Previsualizar siguiente obra\" para comenzar"}</p>
+            <h3>Sorteo {history.length + 1}</h3>
+            {preview ? (
+              <div style={{ textAlign: "center" }}>
+                {preview.artist && (
+                  <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--primary)" }}>
+                    {preview.artist}
+                  </div>
+                )}
+                <div style={{ fontSize: "1.1rem", opacity: 0.7, marginTop: preview.artist ? "0.2rem" : "0" }}>
+                  {preview.artwork || preview.name}
+                </div>
+              </div>
+            ) : (
+              <p>Presiona "Siguiente obra" para comenzar</p>
+            )}
 
             {revealing && countdown !== null && (
               <div className="reveal-countdown" style={{ marginTop: ".6rem", fontSize: "1.25rem", fontWeight: 800 }}>
@@ -452,7 +465,14 @@ export default function Raffle() {
                     <div className="winner-modal-label">¡Tenemos un ganador!</div>
                     <div className="winner-ticket-number">{winner.ticket_number}</div>
                     <div className="winner-name">{winner.winner}</div>
-                    <div className="winner-artwork-title">{winner.artwork}</div>
+                    <div className="winner-artwork-title">
+                       <div style={{ color: "var(--primary)", fontWeight: 800, fontSize: "1.2rem" }}>
+                         {winner.artist}
+                       </div>
+                       <div style={{ opacity: 0.6, fontSize: "1rem", marginTop: "0.2rem" }}>
+                         {winner.artwork}
+                       </div>
+                    </div>
                     <button className="btn primary" onClick={() => setWinner(null)} style={{ width: "100%", padding: "1rem" }}>
                       Continuar Sorteo
                     </button>
@@ -465,9 +485,11 @@ export default function Raffle() {
           {history && history.length > 0 && (
             <div style={{ marginTop: "1rem" }}>
               <h3 style={{ marginBottom: ".5rem" }}>Historial de Sorteos</h3>
-              {history.slice(0, 10).map((h, i) => (
+              {history.map((h, i) => (
                 <div key={i} style={{ padding: ".6rem 0", borderBottom: "1px solid rgba(2,6,23,0.04)" }}>
-                  <div style={{fontWeight:700}}>{h.artwork_name}</div>
+                  <div style={{fontWeight:700}}>
+                    Sorteo {history.length - i} — {h.artist} — {h.artwork_name}
+                  </div>
                   <div style={{ color: "rgba(2,6,23,0.6)", fontSize: "0.9rem" }}>
                     Ganador: <strong>{h.winner_full_name}</strong> (Boleta: {h.ticket_number})
                   </div>

@@ -89,6 +89,7 @@ def run_raffle_single(db: Session, artwork_id: int = None) -> dict:
 
     return {
         "artwork":        artwork.name,
+        "artist":         artwork.artist,
         "winner":         winner_ticket.participant.full_name,
         "participant_id": winner_ticket.participant_id,
         "ticket_number":  winner_ticket.ticket_number,

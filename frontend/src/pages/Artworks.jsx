@@ -157,8 +157,10 @@ export default function Artworks() {
               )}
 
               <div className="artwork-body">
-                <div className="artwork-title">{a.name}</div>
+                
                 <div className="artwork-artist">{a.artist}</div>
+                <div className="artwork-title">{a.name}</div>
+                
               </div>
               {isAwarded && <div className="artwork-badge">Sorteada</div>}
             </article>

@@ -101,10 +101,14 @@ def get_participants_count(db: Session = Depends(get_db)):
     return {"count": db.query(models.Participant).count()}
 
 
-# READ ALL
+# READ ALL (PAGINATED)
 @router.get("/", response_model=list[ParticipantOut])
-def get_participants(db: Session = Depends(get_db)):
-    return db.query(models.Participant).all()
+def get_participants(
+    skip: int = 0, 
+    limit: int = 100, # Reduced limit for significantly faster loading
+    db: Session = Depends(get_db)
+):
+    return db.query(models.Participant).offset(skip).limit(limit).all()
 
 
 # READ ONE

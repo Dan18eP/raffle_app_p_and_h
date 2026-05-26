@@ -57,7 +57,7 @@ def get_next_artwork(
     if not artwork:
         raise HTTPException(status_code=404, detail="No artworks available for raffle")
 
-    return {"id": artwork.id, "artwork": artwork.name}
+    return {"id": artwork.id, "artwork": artwork.name, "artist": artwork.artist}
 
 
 @router.post("/run", status_code=status.HTTP_200_OK)
@@ -172,6 +172,7 @@ def get_raffle_history(
             "raffle_id": r.id,
             "drawn_at": r.drawn_at,
             "artwork_name": r.artwork.name if r.artwork else "N/A",
+            "artist": r.artwork.artist if r.artwork else "N/A",
             "winner_full_name": r.winner_ticket.participant.full_name if r.winner_ticket and r.winner_ticket.participant else "N/A",
             "ticket_number": r.winner_ticket.ticket_number if r.winner_ticket else "N/A",
         })
