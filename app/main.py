@@ -11,6 +11,10 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Peace & Hope Raffle API")
 
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
+
 from fastapi.middleware.cors import CORSMiddleware
 
 

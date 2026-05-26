@@ -266,13 +266,13 @@ export default function Raffle() {
 
     try {
       // Contador fijado en 10s para mejor ritmo en vivo
-      const start = 10;
+      const start = 5;
       setCountdown(start);
 
       // reproducir audio
       if (audioRef.current) {
         try {
-          audioRef.current.playbackRate = 1.25; // Acelerar un poco para aumentar tensión
+          audioRef.current.playbackRate = 1.35; // Acelerar un poco para aumentar tensión
           audioRef.current.currentTime = 0;
           await audioRef.current.play();
         } catch (err) {
