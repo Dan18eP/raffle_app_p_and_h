@@ -1,5 +1,5 @@
 # app/services/raffle.py
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
@@ -82,7 +82,10 @@ def run_raffle_single(db: Session, artwork_id: int = None) -> dict:
     winner_ticket.status     = TicketStatus.WINNER
     raffle.winner_ticket_id  = winner_ticket.id
     raffle.status            = RaffleStatus.COMPLETED
-    raffle.drawn_at          = datetime.utcnow()
+    
+    # Bogota Time (UTC-5)
+    bogota_tz = timezone(timedelta(hours=-5))
+    raffle.drawn_at = datetime.now(bogota_tz).replace(tzinfo=None)
 
     db.commit()
     db.refresh(raffle)
