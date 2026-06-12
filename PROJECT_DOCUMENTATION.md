@@ -1570,7 +1570,7 @@ Ninguno reportado. Sistema funcional y estable.
 
 **Proyecto**: Peace & Hope Raffle App  
 **Fundación**: Peace & Hope for the Children of Colombia  
-**Desenvolvedor**: [Tu nombre/equipo]  
+**Desarrollador**: Daniel Echeverría  
 **Última actualización**: Mayo 2026
 
 ---
